@@ -32,3 +32,8 @@ export const placeOrder = createOrder;
 export function updateOrderStatus(orderId: string, status: string): Promise<Order> {
   return request({ url: `/orders/${orderId}/status`, method: 'PUT', data: { status } });
 }
+
+/** 更新订单（商家端使用）*/
+export function updateOrder(orderId: string, data: { status: string }): Promise<Order> {
+  return request({ url: `/orders/${orderId}/status`, method: 'PUT', data });
+}

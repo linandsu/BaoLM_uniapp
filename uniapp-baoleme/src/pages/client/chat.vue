@@ -20,9 +20,10 @@
       </view>
       <view
         v-else
-        class="mode-badge human"
+        class="switch-human-btn"
+        @tap="switchToBot"
       >
-        <text>人工中</text>
+        <text>转AI</text>
       </view>
     </view>
 
@@ -72,7 +73,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
-import { getChatSession, getChatMessages, sendChatMessage, switchToHumanService } from '../../api/chat';
+import { getChatSession, getChatMessages, sendChatMessage, switchToHumanService, switchChatMode } from '../../api/chat';
 import { useAuthStore } from '../../stores/auth';
 import type { Message } from '../../types';
 
@@ -162,6 +163,17 @@ async function switchToHuman() {
   }
 }
 
+async function switchToBot() {
+  try {
+    const userId = authStore.userProfile?.id || 'u1';
+    await switchChatMode(`session_${userId}`, 'bot');
+    chatMode.value = 'bot';
+    uni.showToast({ title: '已切换AI客服', icon: 'success' });
+  } catch (e) {
+    uni.showToast({ title: '切换失败，请重试', icon: 'none' });
+  }
+}
+
 function scrollToBottom() {
   nextTick(() => {
     scrollTop.value = 99999;
@@ -181,17 +193,20 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .chat-page {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #F8FAFC;
+  overflow: hidden;
 }
 
 .chat-header {
   background: linear-gradient(135deg, #FF6B35, #FF926B);
-  padding: 60rpx 32rpx 24rpx;
+  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
+  flex-shrink: 0;
 }
 
 .back-btn {
@@ -227,6 +242,7 @@ onUnmounted(() => {
 .messages-area {
   flex: 1;
   padding: 24rpx;
+  overflow-y: auto;
 }
 
 .message-row {
@@ -307,9 +323,11 @@ onUnmounted(() => {
   background: white;
   border-top: 1rpx solid #E2E8F0;
   padding: 16rpx 24rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom, 0px));
   display: flex;
   gap: 16rpx;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .msg-input {

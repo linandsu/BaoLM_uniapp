@@ -163,7 +163,7 @@
       <view class="cart-panel">
         <view class="cart-header">
           <text class="cart-title">购物车</text>
-          <text class="cart-clear" @tap="cartStore.clearCart()">清空</text>
+          <text class="cart-clear" @tap="cartStore.clearCart(); isCartOpen = false">清空</text>
         </view>
 
         <scroll-view class="cart-items" scroll-y>
@@ -369,7 +369,7 @@ function goToChat() {
 
 .top-nav {
   background: linear-gradient(135deg, #FF6B35, #FF926B);
-  padding: 80rpx 32rpx 24rpx;
+  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
   color: #fff;
 }
 
