@@ -16,12 +16,54 @@ export function setBaseUrl(url: string) {
 
 export const API_PREFIX = '/api';
 
+function isH5Runtime(): boolean {
+  try {
+    const info = uni.getSystemInfoSync() as { uniPlatform?: string };
+    return info.uniPlatform === 'web' || info.uniPlatform === 'h5';
+  } catch {
+    return typeof window !== 'undefined' && typeof document !== 'undefined';
+  }
+}
+
+/** H5 使用 fetch + FormData 上传（blob 路径更稳定） */
+async function uploadFileRequestH5(
+  apiPath: string,
+  filePath: string,
+  fieldName: string
+): Promise<any> {
+  const token = uni.getStorageSync('baoleme_token');
+  const blob = await fetch(filePath).then((r) => r.blob());
+  const form = new FormData();
+  const filename = blob.type.includes('png') ? 'image.png' : 'image.jpg';
+  form.append(fieldName, blob, filename);
+
+  const res = await fetch(getBaseUrl() + API_PREFIX + apiPath, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw { statusCode: res.status, data: text };
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 /** multipart 上传（菜品图等），返回可写入 image 字段的 URL */
 export function uploadFileRequest(
   apiPath: string,
   filePath: string,
   fieldName = 'file'
 ): Promise<any> {
+  if (isH5Runtime()) {
+    return uploadFileRequestH5(apiPath, filePath, fieldName);
+  }
+
   return new Promise((resolve, reject) => {
     const token = uni.getStorageSync('baoleme_token');
     uni.uploadFile({

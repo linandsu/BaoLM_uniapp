@@ -9,16 +9,13 @@
     <view class="login-container">
       <!-- 品牌头部 -->
       <view class="brand-header">
-        <view class="badge">
-          <text class="badge-text">优秀毕业设计 / 课程设计联动系统</text>
-        </view>
         <text class="brand-title">饱了么</text>
         <text class="brand-subtitle">智能膳食推荐 · 双端联动系统</text>
       </view>
 
-      <!-- 吉祥物区域 -->
+      <!-- 吉祥物：饱饱 SVG -->
       <view class="mascot-area" @tap="handleMascotTap">
-        <text class="mascot-emoji">🐱</text>
+        <BaobaoMascot />
         <text v-if="showBurp" class="burp-bubble">嗝~ 好饱呀 喵~</text>
       </view>
 
@@ -175,6 +172,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue';
 import TapButton from '../../components/TapButton.vue';
+import BaobaoMascot from '../../components/BaobaoMascot.vue';
 import { useDeviceStore } from '../../stores/device';
 
 const deviceStore = useDeviceStore();
@@ -380,11 +378,11 @@ async function handleRegister() {
   width: 90%;
   max-width: 680rpx;
   margin: 0 auto;
-  padding: calc(env(safe-area-inset-top, 24rpx) + 80rpx) 5vw calc(env(safe-area-inset-bottom, 24rpx) + 48rpx);
+  padding: calc(env(safe-area-inset-top, 24rpx) + 72rpx) 5vw calc(env(safe-area-inset-bottom, 24rpx) + 40rpx);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32rpx;
+  gap: 20rpx;
   position: relative;
   z-index: 1;
 }
@@ -394,22 +392,7 @@ async function handleRegister() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12rpx;
-}
-
-.badge {
-  background: rgba(255,255,255,0.7);
-  border: 1rpx solid rgba(226,92,48,0.15);
-  border-radius: 100rpx;
-  padding: 8rpx 24rpx;
-  backdrop-filter: blur(8rpx);
-}
-.badge-text {
-  font-size: 18rpx;
-  color: #3C2F2B;
-  font-weight: 800;
-  letter-spacing: 3rpx;
-  text-transform: uppercase;
+  gap: 8rpx;
 }
 
 .brand-title {
@@ -432,14 +415,14 @@ async function handleRegister() {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  margin: 0;
   animation: mascotBreath 4s ease-in-out infinite;
 }
-.mascot-emoji {
-  font-size: 14vw;
-}
+
 .burp-bubble {
   position: absolute;
-  top: -60rpx;
+  top: -48rpx;
   background: rgba(255, 253, 249, 0.95);
   color: #E25C30;
   font-size: 22rpx;

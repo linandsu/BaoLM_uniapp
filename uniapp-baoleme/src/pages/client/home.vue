@@ -1,23 +1,28 @@
 <template>
   <view class="client-home">
-    <!-- 顶部导航 -->
+    <!-- 顶部：用户主视觉 + 配送地址 -->
     <view class="top-nav" :style="safeTopStyle">
-      <view class="nav-location">
-        <text class="location-icon">📍</text>
-        <text class="location-text">{{ address }}</text>
-        <text class="shop-badge">自营店</text>
+      <view class="top-nav-meta">
+        <text class="shop-name-tag">{{ shopName }}</text>
       </view>
 
-      <view class="profile-row">
-        <text class="profile-label">欢迎回来：</text>
-        <view class="profile-picker" @tap="goToMine">
-          <image class="avatar-small" :src="userAvatar" mode="aspectFill" />
-          <text class="profile-name">{{ userName }}</text>
-          <text class="picker-arrow">›</text>
+      <view class="user-hero tap-target" @tap="goToMine">
+        <view class="avatar-ring">
+          <image class="avatar-large" :src="userAvatar" mode="aspectFill" />
+        </view>
+        <view class="user-copy">
+          <text class="user-greeting">欢迎回来</text>
+          <view class="user-name-row">
+            <text class="user-name">{{ userName }}</text>
+            <text class="user-chevron">›</text>
+          </view>
         </view>
       </view>
 
-
+      <view class="nav-location">
+        <text class="location-icon">📍</text>
+        <text class="location-text">{{ address }}</text>
+      </view>
     </view>
 
     <!-- 主内容区 -->
@@ -235,6 +240,8 @@ const userAvatar = computed(() =>
   resolveUserAvatar(authStore.userProfile?.avatar)
 );
 const userName = computed(() => authStore.userProfile?.name || '王小明');
+/** 与商家端展示一致，后续可接 shop_name 接口 */
+const shopName = '饱了么金牌自营旗舰店';
 
 const filteredDishes = computed(() => {
   if (selectedCategory.value === 'all') return dishes.value.filter(d => d.status === 'active');
@@ -347,9 +354,7 @@ function goToMine() {
 
 .top-nav {
   background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
-  padding-left: 32rpx;
-  padding-right: 32rpx;
-  padding-bottom: 24rpx;
+  padding: 0 32rpx 28rpx;
   color: #fff;
   position: relative;
   overflow: hidden;
@@ -367,48 +372,124 @@ function goToMine() {
   }
 }
 
-.nav-location {
+.top-nav-meta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16rpx;
+}
+
+.shop-name-tag {
+  max-width: 420rpx;
+  padding: 12rpx 22rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #fff;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.32);
+  border: 1rpx solid rgba(255, 255, 255, 0.45);
+  border-radius: 100rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.5rpx;
+}
+
+.user-hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-bottom: 20rpx;
+  padding: 0 0 4rpx;
+}
+
+.avatar-ring {
+  flex-shrink: 0;
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  padding: 4rpx;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.12);
+}
+
+.avatar-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4rpx solid #fff;
+  box-sizing: border-box;
+  display: block;
+}
+
+.user-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.user-greeting {
+  font-size: 26rpx;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 600;
+  letter-spacing: 1rpx;
+}
+
+.user-name-row {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  margin-bottom: 16rpx;
 }
 
-.location-icon { font-size: 28rpx; }
-.location-text { font-size: 24rpx; font-weight: 600; flex: 1; }
-.shop-badge {
-  background: rgba(255,255,255,0.2);
-  padding: 4rpx 14rpx;
+.user-name {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+}
+
+.user-chevron {
+  font-size: 40rpx;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-location {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 14rpx 18rpx;
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 20rpx;
-  font-size: 18rpx;
-  font-weight: 700;
+  border: 1rpx solid rgba(255, 255, 255, 0.22);
 }
-.profile-row {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
-}
-.profile-label { font-size: 20rpx; color: rgba(255,255,255,0.75); font-weight: 500; }
-.profile-picker {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  background: rgba(255,255,255,0.25);
-  padding: 10rpx 20rpx;
-  border-radius: 40rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
-}
-.avatar-small {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  border: 2rpx solid #fff;
-}
-.profile-name { font-size: 26rpx; font-weight: 800; color: #fff; }
-.picker-arrow { font-size: 28rpx; color: rgba(255,255,255,0.9); margin-left: 4rpx; }
 
-
+.location-icon { font-size: 26rpx; flex-shrink: 0; }
+.location-text {
+  font-size: 24rpx;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.95);
+}
 .main-content {
   flex: 1;
   display: flex;

@@ -1,5 +1,7 @@
 /** 菜品/头像本地图：避免每次加载远程 Unsplash */
 
+import { canUseUniCompressImage, compressImageWithCanvas } from './imageCompress';
+
 const DISH_IMAGE_MAP_KEY = 'baoleme_dish_local_images';
 const AVATAR_KEY = 'baoleme_user_avatar_local';
 const USER_AVATAR_MAP_KEY = 'baoleme_user_avatar_map';
@@ -93,8 +95,27 @@ export function resolveDishImage(dishId: string, remoteOrPath?: string): string 
 
 const MAX_DISH_IMAGE_BASE64 = 320000;
 
+function readPathAsDataUrlWeb(filePath: string): Promise<string> {
+  if (isDataImage(filePath)) return Promise.resolve(filePath);
+  return fetch(filePath)
+    .then((r) => r.blob())
+    .then(
+      (blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result || ''));
+          reader.onerror = () => reject(new Error('读取图片失败'));
+          reader.readAsDataURL(blob);
+        })
+    );
+}
+
 function readPathAsDataUrlFsm(filePath: string): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (typeof uni.getFileSystemManager !== 'function') {
+      readPathAsDataUrlWeb(filePath).then(resolve).catch(reject);
+      return;
+    }
     uni.getFileSystemManager().readFile({
       filePath,
       encoding: 'base64',
@@ -102,7 +123,7 @@ function readPathAsDataUrlFsm(filePath: string): Promise<string> {
         const mime = /\.png/i.test(filePath) ? 'image/png' : 'image/jpeg';
         resolve(`data:${mime};base64,${res.data}`);
       },
-      fail: reject,
+      fail: () => readPathAsDataUrlWeb(filePath).then(resolve).catch(reject),
     });
   });
 }
@@ -136,6 +157,12 @@ function readPathAsDataUrlPlus(filePath: string): Promise<string> {
 
 function readPathAsDataUrl(filePath: string): Promise<string> {
   if (isDataImage(filePath)) return Promise.resolve(filePath);
+  if (
+    typeof window !== 'undefined' &&
+    (filePath.startsWith('blob:') || filePath.startsWith('http://') || filePath.startsWith('https://'))
+  ) {
+    return readPathAsDataUrlWeb(filePath);
+  }
   // @ts-expect-error App-PLUS
   if (typeof plus !== 'undefined' && plus.io) {
     return readPathAsDataUrlPlus(filePath);
@@ -144,12 +171,15 @@ function readPathAsDataUrl(filePath: string): Promise<string> {
 }
 
 export function compressImagePath(src: string, quality: number): Promise<string> {
+  if (!canUseUniCompressImage()) {
+    return compressImageWithCanvas(src, quality);
+  }
   return new Promise((resolve) => {
     uni.compressImage({
       src,
       quality,
       success: (r) => resolve(r.tempFilePath),
-      fail: () => resolve(src),
+      fail: () => compressImageWithCanvas(src, quality).then(resolve),
     });
   });
 }
