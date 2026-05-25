@@ -1,7 +1,7 @@
 <template>
   <view class="merchant-page">
-    <view class="merchant-header">
-      <text class="back-btn" @tap="uni.navigateBack()">←</text>
+    <view class="merchant-header" :style="safeTopStyle">
+      <text class="back-btn tap-target" @tap="goBack">←</text>
       <text class="header-title">📋 订单管理</text>
     </view>
 
@@ -46,31 +46,31 @@
         <view class="order-footer">
           <text class="order-total">合计 ¥{{ order.totalPrice.toFixed(2) }}</text>
           <view class="action-btns">
-            <button
+            <view
               v-if="order.status === 'pending'"
-              class="btn-action btn-accept"
+              class="btn-action btn-accept tap-target"
               @tap="updateOrderStatus(order.id, 'accepted')"
-            >接单</button>
-            <button
+            >接单</view>
+            <view
               v-if="order.status === 'accepted'"
-              class="btn-action btn-cook"
+              class="btn-action btn-cook tap-target"
               @tap="updateOrderStatus(order.id, 'cooking')"
-            >开始制作</button>
-            <button
+            >开始制作</view>
+            <view
               v-if="order.status === 'cooking'"
-              class="btn-action btn-deliver"
+              class="btn-action btn-deliver tap-target"
               @tap="updateOrderStatus(order.id, 'delivering')"
-            >派送</button>
-            <button
+            >派送</view>
+            <view
               v-if="order.status === 'delivering'"
-              class="btn-action btn-complete"
+              class="btn-action btn-complete tap-target"
               @tap="updateOrderStatus(order.id, 'completed')"
-            >完成</button>
-            <button
+            >完成</view>
+            <view
               v-if="['pending', 'accepted'].includes(order.status)"
-              class="btn-action btn-cancel"
+              class="btn-action btn-cancel tap-target"
               @tap="updateOrderStatus(order.id, 'cancelled')"
-            >取消</button>
+            >取消</view>
           </view>
         </view>
       </view>
@@ -80,8 +80,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { getOrders, updateOrder } from '../../api/orders';
 import type { Order, OrderStatus } from '../../types';
+import { goBack } from '../../utils/nav';
+import { useSafeTop } from '../../composables/useSafeTop';
+
+const safeTopStyle = useSafeTop(12);
 
 const orders = ref<Order[]>([]);
 const activeFilter = ref<'all' | 'pending' | 'active' | 'completed'>('all');
@@ -126,6 +131,13 @@ async function updateOrderStatus(orderId: string, status: OrderStatus) {
   }
 }
 
+onLoad((query) => {
+  const filter = query?.filter as string;
+  if (filter && ['all', 'pending', 'active', 'completed'].includes(filter)) {
+    activeFilter.value = filter as typeof activeFilter.value;
+  }
+});
+
 onMounted(() => { fetchOrders(); pollTimer = setInterval(fetchOrders, 2500); });
 onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 </script>
@@ -135,7 +147,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .merchant-header {
   background: linear-gradient(135deg, #2D3436, #636E72);
-  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
@@ -208,7 +222,16 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .order-total { font-size: 32rpx; font-weight: 800; color: #E25C30; }
 
 .action-btns { display: flex; gap: 12rpx; flex-wrap: wrap; }
-.btn-action { font-size: 24rpx; font-weight: 800; padding: 12rpx 24rpx; border-radius: 16rpx; border: none; }
+.btn-action {
+  font-size: 24rpx;
+  font-weight: 800;
+  padding: 16rpx 24rpx;
+  min-height: 64rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .btn-accept { background: #E25C30; color: white; }
 .btn-cook { background: #F59E0B; color: white; }
 .btn-deliver { background: #10B981; color: white; }

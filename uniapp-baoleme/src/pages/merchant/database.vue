@@ -1,15 +1,15 @@
 <template>
   <view class="merchant-page">
-    <view class="merchant-header">
-      <text class="back-btn" @tap="uni.navigateBack()">←</text>
+    <view class="merchant-header" :style="safeTopStyle">
+      <text class="back-btn tap-target" @tap="goBack">←</text>
       <text class="header-title">🗄️ 数据库 DDL</text>
     </view>
 
     <view class="ddl-toolbar">
       <text class="ddl-hint">MySQL 建表语句 · 可向评委老师展示实体外键关系</text>
-      <button class="copy-btn" @tap="copyDDL">
-        {{ copied ? '✅ 已复制' : '📋 复制全部' }}
-      </button>
+      <view class="copy-btn tap-target" @tap="copyDDL">
+        <text>{{ copied ? '✅ 已复制' : '📋 复制全部' }}</text>
+      </view>
     </view>
 
     <scroll-view class="ddl-content" scroll-y>
@@ -23,6 +23,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { MYSQL_DDL_SCHEMA } from '../../data/dishes';
+import { goBack } from '../../utils/nav';
+import { useSafeTop } from '../../composables/useSafeTop';
+
+const safeTopStyle = useSafeTop(12);
 
 const copied = ref(false);
 
@@ -48,7 +52,9 @@ function copyDDL() {
 
 .merchant-header {
   background: #0F172A;
-  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
@@ -83,14 +89,16 @@ function copyDDL() {
 }
 
 .copy-btn {
-  background: #E25C30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e25c30;
   color: white;
   font-size: 24rpx;
   font-weight: 800;
-  padding: 12rpx 28rpx;
+  padding: 16rpx 28rpx;
+  min-height: 64rpx;
   border-radius: 16rpx;
-  border: none;
-  line-height: 1;
 }
 
 .ddl-content {

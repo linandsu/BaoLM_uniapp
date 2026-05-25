@@ -29,6 +29,13 @@
       }
     },
     {
+      "path": "pages/client/mine",
+      "style": {
+        "navigationBarTitleText": "个人信息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/merchant/analytics",
       "style": {
         "navigationBarTitleText": "掌柜后台 · 概览",

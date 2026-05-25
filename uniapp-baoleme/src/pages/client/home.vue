@@ -1,46 +1,23 @@
 <template>
   <view class="client-home">
     <!-- 顶部导航 -->
-    <view class="top-nav">
+    <view class="top-nav" :style="safeTopStyle">
       <view class="nav-location">
         <text class="location-icon">📍</text>
         <text class="location-text">{{ address }}</text>
         <text class="shop-badge">自营店</text>
-        <text class="logout-btn" @tap="handleLogout">退出</text>
       </view>
 
-      <!-- 用户画像切换 -->
       <view class="profile-row">
-        <text class="profile-label">测试画像：</text>
-        <picker
-          :range="profileNames"
-          :value="activeProfileIndex"
-          @change="onProfileChange"
-        >
-          <view class="profile-picker">
-            <text class="profile-name">{{ activeProfile.name }}</text>
-            <text class="picker-arrow">▼</text>
-          </view>
-        </picker>
+        <text class="profile-label">欢迎回来：</text>
+        <view class="profile-picker" @tap="goToMine">
+          <image class="avatar-small" :src="userAvatar" mode="aspectFill" />
+          <text class="profile-name">{{ userName }}</text>
+          <text class="picker-arrow">›</text>
+        </view>
       </view>
 
-      <!-- 首页/订单 Tab -->
-      <view class="nav-tabs">
-        <view
-          class="nav-tab"
-          :class="{ active: activeTab === 'home' }"
-          @tap="activeTab = 'home'"
-        >
-          <text>🍽️ 点餐</text>
-        </view>
-        <view
-          class="nav-tab"
-          :class="{ active: activeTab === 'orders' }"
-          @tap="goToOrders"
-        >
-          <text>📋 我的订单</text>
-        </view>
-      </view>
+
     </view>
 
     <!-- 主内容区 -->
@@ -66,13 +43,13 @@
             v-model="customCraving"
             placeholder="今天想吃什么？（可选）"
           />
-          <button
-            class="btn-recommend"
-            :disabled="isRecommending"
-            @tap="handleAIRecommend"
+          <view
+            class="btn-recommend tap-target"
+            :class="{ disabled: isRecommending }"
+            @tap="!isRecommending && handleAIRecommend()"
           >
             <text>{{ isRecommending ? '推荐中...' : '🤖 AI推荐' }}</text>
-          </button>
+          </view>
         </view>
 
         <!-- 推荐结果 -->
@@ -111,7 +88,7 @@
         <!-- 菜品列表 -->
         <scroll-view class="dish-list" scroll-y>
           <view v-for="dish in filteredDishes" :key="dish.id" class="dish-card">
-            <image class="dish-image" :src="dish.image" mode="aspectFill" />
+            <DishImage class="dish-image-wrap" :src="dish.image" img-class="dish-image" />
             <view class="dish-info">
               <text class="dish-name">{{ dish.name }}</text>
               <text class="dish-desc">{{ dish.description }}</text>
@@ -160,8 +137,9 @@
     </view>
 
     <!-- 购物车弹窗 -->
-    <view v-if="isCartOpen" class="cart-overlay" @tap.self="isCartOpen = false">
-      <view class="cart-panel">
+    <view v-if="isCartOpen" class="cart-overlay">
+      <view class="cart-backdrop" @tap="isCartOpen = false" />
+      <view class="cart-panel" @tap.stop>
         <view class="cart-header">
           <text class="cart-title">购物车</text>
           <text class="cart-clear" @tap="cartStore.clearCart(); isCartOpen = false">清空</text>
@@ -201,21 +179,19 @@
             <text class="total-price">¥{{ cartStore.totalPrice.toFixed(2) }}</text>
           </view>
 
-          <button
-            class="btn-place-order"
-            :disabled="isCheckingOut"
-            @tap="handlePlaceOrder"
+          <view
+            class="btn-place-order tap-target"
+            :class="{ disabled: isCheckingOut }"
+            @tap="!isCheckingOut && handlePlaceOrder()"
           >
             <text>{{ isCheckingOut ? '提交中...' : '立即下单' }}</text>
-          </button>
+          </view>
         </view>
       </view>
     </view>
 
-    <!-- 客服悬浮按钮 -->
-    <view class="chat-fab" @tap="goToChat">
-      <text class="chat-fab-icon">💬</text>
-    </view>
+    <!-- 底部自定义导航栏 -->
+    <CustomTabBar active="home" />
   </view>
 </template>
 
@@ -223,14 +199,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useCartStore } from '../../stores/cart';
 import { useAuthStore } from '../../stores/auth';
+import CustomTabBar from '../../components/CustomTabBar.vue';
+import DishImage from '../../components/DishImage.vue';
+import { useSafeTop } from '../../composables/useSafeTop';
+import { resolveDishImage, resolveUserAvatar } from '../../utils/localImage';
 import { getDishes, getCategories } from '../../api/dishes';
 import { getOrders, placeOrder } from '../../api/orders';
 import { getRecommendation } from '../../api/recommend';
-import { MOCK_USER_PROFILES } from '../../data/dishes';
 import type { Dish, Category, Order, Recommendation } from '../../types';
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const safeTopStyle = useSafeTop(16);
 
 const activeTab = ref<'home' | 'orders'>('home');
 const categories = ref<Category[]>([]);
@@ -249,9 +229,10 @@ const customCraving = ref('');
 const customTags = ref<string[]>([]);
 
 // 用户画像
-const activeProfile = ref(MOCK_USER_PROFILES[0]);
-const profileNames = computed(() => MOCK_USER_PROFILES.map(p => p.name));
-const activeProfileIndex = computed(() => MOCK_USER_PROFILES.findIndex(p => p.id === activeProfile.value.id));
+const userAvatar = computed(() =>
+  resolveUserAvatar(authStore.userProfile?.avatar)
+);
+const userName = computed(() => authStore.userProfile?.name || '王小明');
 
 const filteredDishes = computed(() => {
   if (selectedCategory.value === 'all') return dishes.value.filter(d => d.status === 'active');
@@ -263,13 +244,9 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 onMounted(async () => {
   // 从 auth store 恢复用户画像
   if (authStore.userProfile) {
-    const matched = MOCK_USER_PROFILES.find(p => p.id === authStore.userProfile!.id);
-    if (matched) activeProfile.value = matched;
     customTags.value = authStore.userProfile.tags || [];
     address.value = authStore.userProfile.address || address.value;
     phone.value = authStore.userProfile.phone || phone.value;
-  } else {
-    customTags.value = activeProfile.value.tags || [];
   }
 
   await loadData();
@@ -287,18 +264,17 @@ onUnmounted(() => {
 async function loadData() {
   try {
     const [dishData, catData] = await Promise.all([getDishes(), getCategories()]);
-    dishes.value = dishData;
+    dishes.value = dishData.map((d) => ({
+      ...d,
+      image: resolveDishImage(d.id, d.image),
+    }));
     categories.value = catData;
   } catch (e) {
     console.error('加载数据失败', e);
   }
 }
 
-function onProfileChange(e: any) {
-  const idx = e.detail.value;
-  activeProfile.value = MOCK_USER_PROFILES[idx];
-  customTags.value = activeProfile.value.tags || [];
-}
+
 
 function removeTag(tag: string) {
   customTags.value = customTags.value.filter(t => t !== tag);
@@ -310,7 +286,7 @@ async function handleAIRecommend() {
   try {
     const result = await getRecommendation({
       tags: customTags.value,
-      favoriteCategory: activeProfile.value.favoriteCategory,
+      favoriteCategory: '热销推荐',
       customCraving: customCraving.value,
     });
     recommendation.value = result;
@@ -352,41 +328,40 @@ async function handlePlaceOrder() {
   }
 }
 
-function goToOrders() {
-  uni.navigateTo({ url: '/pages/client/orders' });
-}
-
-function goToChat() {
-  uni.navigateTo({ url: '/pages/client/chat' });
-}
-
-function handleLogout() {
-  authStore.logout();
-  uni.reLaunch({ url: '/pages/login/index' });
+function goToMine() {
+  uni.reLaunch({ url: '/pages/client/mine' });
 }
 </script>
 
 <style lang="scss">
 .client-home {
-  min-height: 100vh; min-height: 100dvh;
-  background: #FCFAF9;
-  padding-bottom: 120rpx;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #fcfaf9;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom, 0px));
 }
 
 .top-nav {
   background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
-  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 24rpx;
   color: #fff;
   position: relative;
   overflow: hidden;
   &::before {
     content: '';
     position: absolute;
-    top: -40rpx; right: -40rpx;
-    width: 240rpx; height: 240rpx;
-    background: rgba(255,255,255,0.08);
+    top: -40rpx;
+    right: -40rpx;
+    width: 240rpx;
+    height: 240rpx;
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 50%;
     filter: blur(40rpx);
+    pointer-events: none;
   }
 }
 
@@ -406,17 +381,6 @@ function handleLogout() {
   font-size: 18rpx;
   font-weight: 700;
 }
-.logout-btn {
-  background: rgba(255,255,255,0.2);
-  padding: 8rpx 20rpx;
-  border-radius: 20rpx;
-  font-size: 20rpx;
-  font-weight: 700;
-  color: rgba(255,255,255,0.9);
-  min-width: 60rpx;
-  text-align: center;
-}
-
 .profile-row {
   display: flex;
   align-items: center;
@@ -427,39 +391,27 @@ function handleLogout() {
 .profile-picker {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  background: rgba(255,90,32,0.5);
-  padding: 8rpx 16rpx;
-  border-radius: 12rpx;
+  gap: 12rpx;
+  background: rgba(255,255,255,0.25);
+  padding: 10rpx 20rpx;
+  border-radius: 40rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.05);
 }
-.profile-name { font-size: 22rpx; font-weight: 800; color: #fff; }
-.picker-arrow { font-size: 18rpx; color: rgba(255,255,255,0.7); }
+.avatar-small {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  border: 2rpx solid #fff;
+}
+.profile-name { font-size: 26rpx; font-weight: 800; color: #fff; }
+.picker-arrow { font-size: 28rpx; color: rgba(255,255,255,0.9); margin-left: 4rpx; }
 
-.nav-tabs {
-  display: flex;
-  background: rgba(255,90,32,0.4);
-  border-radius: 20rpx;
-  padding: 6rpx;
-  gap: 6rpx;
-}
-.nav-tab {
-  flex: 1;
-  text-align: center;
-  padding: 14rpx;
-  border-radius: 16rpx;
-  font-size: 24rpx;
-  font-weight: 700;
-  color: rgba(255,255,255,0.7);
-  transition: all 0.2s;
-
-  &.active {
-    background: #fff;
-    color: #E25C30;
-    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
-  }
-}
 
 .main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 24rpx;
 }
 
@@ -503,27 +455,32 @@ function handleLogout() {
 }
 .craving-input {
   flex: 1;
-  background: #FCFAF9;
-  border: 1rpx solid rgba(0,0,0,0.06);
+  min-height: 72rpx;
+  background: #fcfaf9;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 20rpx;
-  padding: 16rpx 20rpx;
-  font-size: 22rpx;
+  padding: 18rpx 20rpx;
+  font-size: 26rpx;
   font-weight: 600;
   &:focus {
     background: white;
-    border-color: #E25C30;
+    border-color: #e25c30;
   }
 }
 .btn-recommend {
-  background: linear-gradient(135deg, #E25C30, #EC784F);
+  background: linear-gradient(135deg, #e25c30, #ec784f);
   color: #fff;
-  border: none;
   border-radius: 20rpx;
-  padding: 16rpx 24rpx;
-  font-size: 22rpx;
+  padding: 18rpx 28rpx;
+  font-size: 24rpx;
   font-weight: 800;
   white-space: nowrap;
   box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.2);
+  flex-shrink: 0;
+
+  &.disabled {
+    opacity: 0.6;
+  }
 }
 
 .recommend-result {
@@ -542,12 +499,14 @@ function handleLogout() {
 .catalog-area {
   display: flex;
   gap: 0;
+  flex: 1;
+  min-height: 480rpx;
+  max-height: calc(100vh - 520rpx);
   background: white;
   border-radius: 28rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.03);
-  border: 1rpx solid rgba(0,0,0,0.04);
-  height: 900rpx;
+  box-shadow: 0 2rpx 16rpx rgba(0, 0, 0, 0.03);
+  border: 1rpx solid rgba(0, 0, 0, 0.04);
 }
 
 .category-sidebar {
@@ -583,12 +542,18 @@ function handleLogout() {
   transition: transform 0.15s;
   &:active { transform: translateY(-2rpx); }
 }
-.dish-image {
+.dish-image-wrap {
   width: 160rpx;
   height: 160rpx;
   border-radius: 20rpx;
   flex-shrink: 0;
-  background: #F1F5F9;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+.dish-image {
+  width: 100%;
+  height: 100%;
 }
 .dish-info { flex: 1; }
 .dish-name { font-size: 26rpx; font-weight: 800; color: #2D3436; display: block; }
@@ -605,8 +570,10 @@ function handleLogout() {
   gap: 12rpx;
 }
 .qty-btn {
-  width: 48rpx;
-  height: 48rpx;
+  width: 56rpx;
+  height: 56rpx;
+  min-width: 56rpx;
+  min-height: 56rpx;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -634,7 +601,7 @@ function handleLogout() {
 
 .cart-fab {
   position: fixed;
-  bottom: 40rpx;
+  bottom: calc(120rpx + env(safe-area-inset-bottom, 0px) + 16rpx);
   left: 32rpx;
   right: 32rpx;
   background: rgba(45, 52, 54, 0.95);
@@ -677,12 +644,23 @@ function handleLogout() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.55);
   z-index: 200;
   display: flex;
   align-items: flex-end;
 }
+
+.cart-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
 .cart-panel {
+  position: relative;
+  z-index: 1;
   background: #fff;
   border-radius: 40rpx 40rpx 0 0;
   width: 100%;
@@ -720,11 +698,12 @@ function handleLogout() {
 .form-label { font-size: 22rpx; color: #7A8B8B; white-space: nowrap; font-weight: 600; }
 .form-input {
   flex: 1;
-  background: #FCFAF9;
-  border: 1rpx solid rgba(0,0,0,0.06);
+  min-height: 72rpx;
+  background: #fcfaf9;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
   border-radius: 16rpx;
-  padding: 14rpx 18rpx;
-  font-size: 22rpx;
+  padding: 18rpx 20rpx;
+  font-size: 26rpx;
   font-weight: 600;
 }
 .checkout-total {
@@ -739,31 +718,17 @@ function handleLogout() {
 .total-price { font-size: 36rpx; font-weight: 900; color: #DC2626; }
 .btn-place-order {
   width: 100%;
-  background: linear-gradient(135deg, #E25C30, #EC784F);
+  background: linear-gradient(135deg, #e25c30, #ec784f);
   color: #fff;
-  border: none;
   border-radius: 24rpx;
   padding: 28rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 800;
   text-align: center;
   box-shadow: 0 8rpx 20rpx rgba(226, 92, 48, 0.25);
-}
 
-.chat-fab {
-  position: fixed;
-  bottom: 160rpx;
-  right: 32rpx;
-  width: 96rpx;
-  height: 96rpx;
-  background: linear-gradient(135deg, #E25C30, #EC784F);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6rpx 24rpx rgba(226, 92, 48, 0.35);
-  z-index: 100;
-  border: 4rpx solid white;
+  &.disabled {
+    opacity: 0.6;
+  }
 }
-.chat-fab-icon { font-size: 40rpx; }
 </style>

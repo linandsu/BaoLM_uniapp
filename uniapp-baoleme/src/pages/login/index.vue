@@ -1,5 +1,5 @@
 <template>
-  <view class="login-page">
+  <scroll-view class="login-page" scroll-y :enable-back-to-top="true">
     <!-- 背景装饰 -->
     <view class="bg-orb bg-orb-1" />
     <view class="bg-orb bg-orb-2" />
@@ -67,7 +67,7 @@
           <text v-if="successMsg" class="success-msg">{{ successMsg }}</text>
           <text v-if="errorMsg" class="error-msg">{{ errorMsg }}</text>
 
-          <button class="btn-primary" @tap="handleRegister">注册账号</button>
+          <TapButton variant="primary" @tap="handleRegister">注册账号</TapButton>
         </view>
 
         <!-- 登录模式 -->
@@ -122,15 +122,10 @@
           <text v-if="errorMsg" class="error-msg">{{ errorMsg }}</text>
 
           <!-- 登录按钮 -->
-          <button
-            class="btn-primary"
-            :class="{ loading: isLoading }"
-            :disabled="isLoading"
-            @tap="handleLogin"
-          >
+          <TapButton variant="primary" :disabled="isLoading" @tap="handleLogin">
             <text v-if="isLoading">{{ loadingText }}</text>
             <text v-else>登录</text>
-          </button>
+          </TapButton>
 
           <!-- 注册入口 -->
           <view class="register-link">
@@ -142,12 +137,13 @@
     </view>
 
     <!-- 设置按钮（左上角） -->
-    <view class="settings-btn" @tap="showSettings = true">
+    <view class="settings-btn" :style="settingsBtnStyle" @tap="showSettings = true">
       <text>⚙️</text>
     </view>
 
     <!-- 设置弹窗 -->
-    <view v-if="showSettings" class="settings-overlay" @tap="showSettings = false">
+    <view v-if="showSettings" class="settings-overlay">
+      <view class="settings-backdrop" @tap="showSettings = false" />
       <view class="settings-panel" @tap.stop>
         <text class="settings-title">后端连接设置</text>
         <text class="settings-desc">当前连接地址：</text>
@@ -168,14 +164,23 @@
         <text class="settings-hint">提示：修改后需要重新登录生效</text>
       </view>
     </view>
-  </view>
+  </scroll-view>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import TapButton from '../../components/TapButton.vue';
+import { useDeviceStore } from '../../stores/device';
+
+const deviceStore = useDeviceStore();
+const settingsBtnStyle = computed(() => ({
+  top: `${(deviceStore.statusBarHeight || 44) + 8}px`,
+}));
 import { useAuthStore } from '../../stores/auth';
 import { loginApi, registerApi } from '../../api/auth';
 import { getBaseUrl, setBaseUrl } from '../../api/config';
+
+onMounted(() => deviceStore.init());
 
 const showSettings = ref(false);
 const backendUrl = ref(getBaseUrl());
@@ -289,14 +294,10 @@ async function handleRegister() {
 <style lang="scss" scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, #FFF7F2 0%, #FFF2E7 40%, #F2FAF6 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding: 5vh 5vw;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  background: linear-gradient(160deg, #fff7f2 0%, #fff2e7 40%, #ffebe0 100%);
   box-sizing: border-box;
 }
 
@@ -344,10 +345,12 @@ async function handleRegister() {
 .login-container {
   width: 90%;
   max-width: 680rpx;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top, 24rpx) + 80rpx) 5vw calc(env(safe-area-inset-bottom, 24rpx) + 48rpx);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3vh;
+  gap: 32rpx;
   position: relative;
   z-index: 1;
 }
@@ -422,17 +425,14 @@ async function handleRegister() {
 
 .login-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(28rpx) saturate(190%);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(40rpx) saturate(190%);
   border-radius: 8vw;
   padding: 6vw 5vw;
-  border: 2rpx solid rgba(255, 255, 255, 0.85);
+  border: 2rpx solid rgba(255, 255, 255, 0.95);
   box-shadow:
-    0 4rpx 10rpx rgba(121, 67, 49, 0.02),
-    0 24rpx 64rpx -20rpx rgba(181, 77, 41, 0.14),
-    0 12rpx 32rpx -12rpx rgba(89, 44, 30, 0.08),
-    inset 0 1rpx 2rpx rgba(255, 255, 255, 0.95),
-    inset 0 -2rpx 4rpx rgba(226, 95, 52, 0.04);
+    0 12rpx 48rpx -12rpx rgba(226, 92, 48, 0.15),
+    inset 0 2rpx 4rpx rgba(255, 255, 255, 0.8);
 }
 
 .card-header {
@@ -633,15 +633,15 @@ async function handleRegister() {
 
 .btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, #E25C30, #EC784F);
+  background: linear-gradient(135deg, #FF7A45, #E25C30);
   color: white;
-  font-size: 28rpx;
-  font-weight: 800;
-  padding: 28rpx;
-  border-radius: 24rpx;
+  font-size: 30rpx;
+  font-weight: 900;
+  padding: 26rpx;
+  border-radius: 28rpx;
   border: none;
   margin-bottom: 24rpx;
-  box-shadow: 0 10rpx 24rpx -8rpx rgba(226, 92, 48, 0.30);
+  box-shadow: 0 12rpx 32rpx -8rpx rgba(226, 92, 48, 0.4);
   transition: all 0.2s;
   &.loading {
     opacity: 0.7;
@@ -720,7 +720,6 @@ async function handleRegister() {
 
 .settings-btn {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 20rpx) + 16rpx);
   right: 4vw;
   width: 9vw;
   height: 9vw;
@@ -741,12 +740,20 @@ async function handleRegister() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
   z-index: 999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10vw;
+}
+
+.settings-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .settings-panel {

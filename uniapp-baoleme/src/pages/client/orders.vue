@@ -1,8 +1,7 @@
 <template>
   <view class="orders-page">
     <!-- 顶部导航 -->
-    <view class="page-header">
-      <text class="back-btn" @tap="goBack">←</text>
+    <view class="page-header" :style="safeTopStyle">
       <text class="page-title">我的订单</text>
     </view>
 
@@ -59,6 +58,7 @@
         </view>
       </view>
     </scroll-view>
+    <CustomTabBar active="orders" />
   </view>
 </template>
 
@@ -66,6 +66,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { getOrders } from '../../api/orders';
 import { useAuthStore } from '../../stores/auth';
+import CustomTabBar from '../../components/CustomTabBar.vue';
+import { useSafeTop } from '../../composables/useSafeTop';
+
+const safeTopStyle = useSafeTop(16);
 import type { Order, OrderStatus } from '../../types';
 
 const authStore = useAuthStore();
@@ -124,10 +128,6 @@ onMounted(() => {
   pollTimer = setInterval(fetchOrders, 2500);
 });
 
-function goBack() {
-  uni.navigateBack();
-}
-
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer);
 });
@@ -139,23 +139,19 @@ onUnmounted(() => {
   background: #FCFAF9;
   display: flex;
   flex-direction: column;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom, 0px));
 }
 
 .page-header {
-  background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
-  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
+  background: linear-gradient(135deg, #e25c30 0%, #ec784f 50%, #efa888 100%);
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 24rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  justify-content: center;
   position: relative;
   overflow: hidden;
-}
-
-.back-btn {
-  color: white;
-  font-size: 40rpx;
-  font-weight: bold;
-  padding: 8rpx 16rpx;
 }
 
 .page-title {

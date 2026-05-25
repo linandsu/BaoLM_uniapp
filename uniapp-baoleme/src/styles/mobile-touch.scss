@@ -1,0 +1,31 @@
+/* App 端 button 默认边框/层级易导致点击失效 */
+button {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  line-height: inherit;
+  font-size: inherit;
+  color: inherit;
+
+  &::after {
+    border: none;
+  }
+}
+
+/* 可点击区域最小高度（约 44px） */
+.tap-target {
+  min-height: 88rpx;
+  min-width: 88rpx;
+}
+
+/* 顾客端自定义底栏占位：Tab + 安全区 */
+$page-tab-bar: 120rpx;
+
+@mixin page-bottom-safe {
+  padding-bottom: calc(#{$page-tab-bar} + env(safe-area-inset-bottom, 0px));
+}
+
+@mixin fab-above-tab {
+  bottom: calc(#{$page-tab-bar} + env(safe-area-inset-bottom, 0px) + 16rpx);
+}

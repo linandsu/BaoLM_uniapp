@@ -1,7 +1,7 @@
 <template>
   <view class="merchant-page">
     <!-- 顶部导航 -->
-    <view class="merchant-header">
+    <view class="merchant-header" :style="safeTopStyle">
       <text class="header-title">💻 掌柜后台</text>
       <text class="header-subtitle">饱了么金牌自营旗舰店</text>
       <view class="header-actions">
@@ -15,19 +15,19 @@
         <text class="tab-icon">📊</text>
         <text class="tab-label">概览</text>
       </view>
-      <view class="tab-item" @tap="uni.navigateTo({ url: '/pages/merchant/orders' })">
+      <view class="tab-item tap-target" @tap="openPage('/pages/merchant/orders')">
         <text class="tab-icon">📋</text>
         <text class="tab-label">订单</text>
       </view>
-      <view class="tab-item" @tap="uni.navigateTo({ url: '/pages/merchant/sku' })">
+      <view class="tab-item tap-target" @tap="openPage('/pages/merchant/sku')">
         <text class="tab-icon">🍽️</text>
         <text class="tab-label">菜品</text>
       </view>
-      <view class="tab-item" @tap="uni.navigateTo({ url: '/pages/merchant/chat' })">
+      <view class="tab-item tap-target" @tap="openPage('/pages/merchant/chat')">
         <text class="tab-icon">💬</text>
         <text class="tab-label">客服</text>
       </view>
-      <view class="tab-item" @tap="uni.navigateTo({ url: '/pages/merchant/database' })">
+      <view class="tab-item tap-target" @tap="openPage('/pages/merchant/database')">
         <text class="tab-icon">🗄️</text>
         <text class="tab-label">DDL</text>
       </view>
@@ -36,21 +36,29 @@
     <!-- 统计卡片 -->
     <scroll-view class="page-content" scroll-y>
       <view class="stats-grid">
-        <view class="stat-card">
+        <view class="stat-card stat-orders tap-target" @tap="openMerchantOrders('all')">
+          <text class="stat-icon">📋</text>
           <text class="stat-value">{{ totalOrders }}</text>
           <text class="stat-label">总订单数</text>
+          <text class="stat-hint">查看全部 ›</text>
         </view>
-        <view class="stat-card highlight">
+        <view class="stat-card stat-revenue">
+          <text class="stat-icon">💰</text>
           <text class="stat-value">¥{{ totalRevenue.toFixed(0) }}</text>
           <text class="stat-label">总营收</text>
+          <text class="stat-hint">已完成订单</text>
         </view>
-        <view class="stat-card">
+        <view class="stat-card stat-pending tap-target" @tap="openMerchantOrders('pending')">
+          <text class="stat-icon">⏳</text>
           <text class="stat-value">{{ pendingOrders }}</text>
           <text class="stat-label">待处理</text>
+          <text class="stat-hint">去接单 ›</text>
         </view>
-        <view class="stat-card">
-          <text class="stat-value">{{ dishes.length }}</text>
+        <view class="stat-card stat-dishes tap-target" @tap="openMerchantSku()">
+          <text class="stat-icon">🍽️</text>
+          <text class="stat-value">{{ activeDishesCount }}</text>
           <text class="stat-label">在售菜品</text>
+          <text class="stat-hint">管理菜品 ›</text>
         </view>
       </view>
 
@@ -90,7 +98,15 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { getDishes } from '../../api/dishes';
 import { getOrders } from '../../api/orders';
 import { useAuthStore } from '../../stores/auth';
+import { navigateTo, openMerchantOrders, openMerchantSku } from '../../utils/nav';
+import { useSafeTop } from '../../composables/useSafeTop';
+
+const safeTopStyle = useSafeTop(16);
 import type { Dish, Order, OrderStatus } from '../../types';
+
+function openPage(url: string) {
+  navigateTo(url);
+}
 
 const authStore = useAuthStore();
 const dishes = ref<Dish[]>([]);
@@ -105,7 +121,13 @@ const statusLabels: Record<OrderStatus, string> = {
 const totalOrders = computed(() => orders.value.length);
 const totalRevenue = computed(() => orders.value.filter(o => o.status === 'completed').reduce((s, o) => s + o.totalPrice, 0));
 const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending').length);
-const topDishes = computed(() => [...dishes.value].sort((a, b) => b.sales - a.sales).slice(0, 5));
+const activeDishesCount = computed(() => dishes.value.filter(d => d.status === 'active').length);
+const topDishes = computed(() =>
+  [...dishes.value]
+    .filter(d => d.status === 'active')
+    .sort((a, b) => b.sales - a.sales)
+    .slice(0, 5)
+);
 const recentOrders = computed(() => [...orders.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
 
 async function fetchData() {
@@ -133,12 +155,14 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   background: #F8FAFC;
   display: flex;
   flex-direction: column;
-  padding-bottom: 120rpx;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom, 0px));
 }
 
 .merchant-header {
-  background: linear-gradient(135deg, #2D3436, #636E72);
-  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
+  background: linear-gradient(135deg, #2d3436, #636e72);
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+  padding-bottom: 24rpx;
   color: white;
 }
 
@@ -176,8 +200,9 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16rpx 0;
+  padding: 20rpx 0;
   gap: 4rpx;
+  min-height: 88rpx;
 }
 
 .tab-item.active .tab-icon,
@@ -198,17 +223,76 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .stat-card {
   background: white;
   border-radius: 28rpx;
-  padding: 32rpx;
-  text-align: center;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  padding: 28rpx 24rpx;
+  text-align: left;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.06);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 
-.stat-card.highlight { background: linear-gradient(135deg, #E25C30, #EC784F); }
-.stat-card.highlight .stat-value,
-.stat-card.highlight .stat-label { color: white; }
+.stat-icon {
+  font-size: 32rpx;
+  display: block;
+  margin-bottom: 8rpx;
+}
 
-.stat-value { font-size: 48rpx; font-weight: 800; color: #2D3436; display: block; }
-.stat-label { font-size: 24rpx; color: #94A3B8; margin-top: 8rpx; display: block; }
+.stat-orders {
+  border: 2rpx solid #dbeafe;
+  background: linear-gradient(160deg, #eff6ff 0%, #fff 70%);
+  .stat-value { color: #1d4ed8; }
+  .stat-label { color: #3b82f6; }
+}
+
+.stat-revenue {
+  background: linear-gradient(135deg, #e25c30, #ec784f);
+  .stat-value,
+  .stat-label,
+  .stat-hint,
+  .stat-icon { color: white; }
+  .stat-hint { opacity: 0.85; }
+}
+
+.stat-pending {
+  border: 2rpx solid #fde68a;
+  background: linear-gradient(160deg, #fffbeb 0%, #fff 70%);
+  .stat-value { color: #b45309; }
+  .stat-label { color: #d97706; }
+}
+
+.stat-dishes {
+  border: 2rpx solid #bbf7d0;
+  background: linear-gradient(160deg, #ecfdf5 0%, #fff 70%);
+  .stat-value { color: #047857; }
+  .stat-label { color: #059669; }
+}
+
+.stat-value {
+  font-size: 44rpx;
+  font-weight: 900;
+  color: #2d3436;
+  display: block;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  margin-top: 6rpx;
+  display: block;
+}
+
+.stat-hint {
+  font-size: 20rpx;
+  color: #94a3b8;
+  margin-top: 10rpx;
+  display: block;
+  font-weight: 600;
+}
 
 .section { background: white; border-radius: 28rpx; padding: 32rpx; margin-bottom: 24rpx; }
 .section-title { font-size: 30rpx; font-weight: 800; color: #2D3436; display: block; margin-bottom: 24rpx; }

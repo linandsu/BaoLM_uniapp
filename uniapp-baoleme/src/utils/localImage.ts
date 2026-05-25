@@ -1,0 +1,91 @@
+/** 菜品/头像本地图：避免每次加载远程 Unsplash */
+
+const DISH_IMAGE_MAP_KEY = 'baoleme_dish_local_images';
+const AVATAR_KEY = 'baoleme_user_avatar_local';
+
+/** 内置占位图（SVG data URI，无需网络） */
+export const DISH_PLACEHOLDER =
+  'data:image/svg+xml;charset=utf-8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#FFF3EF"/><stop offset="100%" stop-color="#FFD0B9"/>
+      </linearGradient></defs>
+      <rect width="240" height="240" rx="32" fill="url(#g)"/>
+      <text x="120" y="132" text-anchor="middle" font-size="72">🍜</text>
+    </svg>`
+  );
+
+function readDishMap(): Record<string, string> {
+  try {
+    const raw = uni.getStorageSync(DISH_IMAGE_MAP_KEY);
+    if (!raw) return {};
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return {};
+  }
+}
+
+function writeDishMap(map: Record<string, string>) {
+  uni.setStorageSync(DISH_IMAGE_MAP_KEY, JSON.stringify(map));
+}
+
+export function isRemoteImage(url: string) {
+  return /^https?:\/\//i.test(url || '');
+}
+
+export function isLocalImage(url: string) {
+  if (!url) return false;
+  return (
+    url.startsWith('file://') ||
+    url.startsWith('_doc') ||
+    url.startsWith('_www') ||
+    url.startsWith('wxfile://') ||
+    url.startsWith('data:') ||
+    url.startsWith('/static/')
+  );
+}
+
+/** 将相册临时路径持久化到应用沙盒 */
+export function persistImage(tempPath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.saveFile({
+      tempFilePath: tempPath,
+      success: (res) => resolve(res.savedFilePath),
+      fail: (err) => reject(err),
+    });
+  });
+}
+
+export function setDishLocalImage(dishId: string, savedPath: string) {
+  const map = readDishMap();
+  map[dishId] = savedPath;
+  writeDishMap(map);
+}
+
+export function getDishLocalImage(dishId: string): string | null {
+  return readDishMap()[dishId] || null;
+}
+
+/** 解析菜品展示图：本地缓存 > 已是本地路径 > 占位图（跳过远程 URL） */
+export function resolveDishImage(dishId: string, remoteOrPath?: string): string {
+  const local = getDishLocalImage(dishId);
+  if (local) return local;
+  if (remoteOrPath && isLocalImage(remoteOrPath)) return remoteOrPath;
+  return DISH_PLACEHOLDER;
+}
+
+export function setUserAvatarLocal(path: string) {
+  uni.setStorageSync(AVATAR_KEY, path);
+}
+
+export function getUserAvatarLocal(): string | null {
+  return uni.getStorageSync(AVATAR_KEY) || null;
+}
+
+export function resolveUserAvatar(remote?: string): string {
+  const local = getUserAvatarLocal();
+  if (local) return local;
+  if (remote && isLocalImage(remote)) return remote;
+  return DISH_PLACEHOLDER;
+}

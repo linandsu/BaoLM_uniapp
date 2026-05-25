@@ -1,89 +1,174 @@
 <template>
-  <view class="chat-page">
-    <!-- 顶部导航 -->
-    <view class="chat-header">
-      <text class="back-btn" @tap="uni.navigateBack()">←</text>
-      <view class="header-info">
+  <view class="chat-page" :class="'mode-' + chatMode">
+    <!-- 顶部：随模式变色 -->
+    <view class="chat-header" :style="safeTopStyle">
+      <view class="header-info header-full">
+        <view class="mode-pill" :class="chatMode">
+          <text class="mode-dot" />
+          <text>{{ chatMode === 'bot' ? 'AI 模式' : '人工模式' }}</text>
+        </view>
         <text class="header-title">
-          {{ chatMode === 'bot' ? '🤖 AI 智能客服' : '👨‍💼 人工客服' }}
+          {{ chatMode === 'bot' ? '🤖 小饱 · 智能客服' : '👨‍💼 商家真人客服' }}
         </text>
         <text class="header-subtitle">
-          {{ chatMode === 'bot' ? '饱了么智能助手' : '商家真人服务中' }}
+          {{ chatMode === 'bot' ? '7×24 秒回 · 催单退款推荐菜品' : '真人商家在线 · 回复可能稍慢' }}
         </text>
       </view>
       <view
         v-if="chatMode === 'bot'"
-        class="switch-human-btn"
+        class="switch-btn switch-to-human tap-target"
         @tap="switchToHuman"
       >
+        <text class="switch-icon">👨‍💼</text>
         <text>转人工</text>
       </view>
-      <view
-        v-else
-        class="switch-human-btn"
-        @tap="switchToBot"
-      >
-        <text>转AI</text>
+      <view v-else class="switch-btn switch-to-bot tap-target" @tap="switchToBot">
+        <text>转 AI</text>
       </view>
     </view>
 
-    <!-- 消息列表 -->
+    <!-- 模式提示条 -->
+    <view class="mode-banner" :class="[chatMode, { pulse: modeBannerPulse, spotlight: chatMode === 'human' }]">
+      <view v-if="chatMode === 'human'" class="banner-live">
+        <text class="live-dot" />
+        <text>人工在线</text>
+      </view>
+      <text class="banner-icon">{{ chatMode === 'bot' ? '🤖' : '👨‍💼' }}</text>
+      <view class="banner-copy">
+        <text class="banner-title">
+          {{ chatMode === 'bot' ? 'AI 小饱接待中' : '商家真人接待中' }}
+        </text>
+        <text class="banner-text">
+          {{
+            chatMode === 'bot'
+              ? '智能秒回 · 可随时转接人工'
+              : '您的消息已同步至商家工作台'
+          }}
+        </text>
+      </view>
+    </view>
+
     <scroll-view
       class="messages-area"
       scroll-y
-      :scroll-top="scrollTop"
-      :scroll-with-animation="true"
+      :scroll-into-view="scrollIntoView"
+      scroll-with-animation
     >
-      <view v-for="msg in messages" :key="msg.id" class="message-row" :class="'role-' + msg.role">
-        <!-- 头像 -->
-        <view class="msg-avatar">
-          <text>{{ msg.role === 'user' ? '👤' : msg.role === 'merchant' ? '👨‍💼' : '🤖' }}</text>
-        </view>
-        <view class="msg-bubble">
-          <text class="msg-content">{{ msg.content }}</text>
-          <text class="msg-time">{{ formatTime(msg.timestamp) }}</text>
-        </view>
-      </view>
+      <template v-for="item in timeline" :key="item.kind === 'message' ? item.data.id : item.data.id">
+        <ChatSystemNotice
+          v-if="item.kind === 'system'"
+          :type="item.data.type"
+          :timestamp="item.data.timestamp"
+          :animate="item.data.id === latestSystemEventId"
+        />
 
-      <!-- AI 打字中 -->
+        <view
+          v-else
+          class="message-row"
+          :class="'role-' + item.data.role"
+        >
+          <view class="msg-avatar" :class="item.data.role">
+            <text>{{ avatarForRole(item.data.role) }}</text>
+          </view>
+          <view class="msg-bubble">
+            <text class="msg-role-label">{{ labelForRole(item.data.role) }}</text>
+            <text class="msg-content">{{ item.data.content }}</text>
+            <text class="msg-time">{{ formatTime(item.data.timestamp) }}</text>
+          </view>
+        </view>
+      </template>
+
       <view v-if="isAiTyping" class="message-row role-assistant">
-        <view class="msg-avatar"><text>🤖</text></view>
+        <view class="msg-avatar assistant"><text>🤖</text></view>
         <view class="msg-bubble typing">
           <text class="dot">●</text>
           <text class="dot">●</text>
           <text class="dot">●</text>
         </view>
       </view>
+      <view id="chat-bottom-anchor" class="scroll-anchor" />
     </scroll-view>
 
-    <!-- 输入栏 -->
-    <view class="input-bar">
+    <view class="input-bar" :class="chatMode">
       <input
         class="msg-input"
         v-model="typedMessage"
-        :placeholder="chatMode === 'bot' ? '问点什么: 催单, 退款或推荐好吃...' : '说点什么，向商家直接提问...'"
+        :placeholder="
+          chatMode === 'bot'
+            ? '问小饱：催单、退款、推荐好吃的...'
+            : '向商家真人提问，请描述清楚问题...'
+        "
         @confirm="handleSend"
       />
-      <view class="send-btn" @tap="handleSend">
+      <view class="send-btn tap-target" @tap="handleSend">
         <text>发送</text>
       </view>
     </view>
+    <CustomTabBar active="chat" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { getChatSession, getChatMessages, sendChatMessage, switchToHumanService, switchChatMode } from '../../api/chat';
 import { useAuthStore } from '../../stores/auth';
+import CustomTabBar from '../../components/CustomTabBar.vue';
+import ChatSystemNotice from '../../components/ChatSystemNotice.vue';
+import { useSafeTop } from '../../composables/useSafeTop';
+import {
+  loadSystemEvents,
+  appendSystemEvent,
+  buildChatTimeline,
+  type ChatSystemEventType,
+} from '../../utils/chatTimeline';
 import type { Message } from '../../types';
 
 const authStore = useAuthStore();
 const messages = ref<Message[]>([]);
+const systemEvents = ref(loadSystemEvents(''));
 const typedMessage = ref('');
 const isAiTyping = ref(false);
 const chatMode = ref<'bot' | 'human'>('bot');
-const scrollTop = ref(0);
+const sessionId = ref('');
+const scrollIntoView = ref('');
+const safeTopStyle = useSafeTop(12);
+const modeBannerPulse = ref(false);
+const latestSystemEventId = ref('');
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let bannerPulseTimer: ReturnType<typeof setTimeout> | null = null;
+
+const timeline = computed(() => buildChatTimeline(messages.value, systemEvents.value));
+
+function flashModeBanner() {
+  modeBannerPulse.value = true;
+  if (bannerPulseTimer) clearTimeout(bannerPulseTimer);
+  bannerPulseTimer = setTimeout(() => {
+    modeBannerPulse.value = false;
+  }, 3200);
+}
+
+function recordModeSwitch(type: ChatSystemEventType) {
+  if (!sessionId.value) return;
+  const event = appendSystemEvent(sessionId.value, type);
+  if (event) {
+    systemEvents.value = loadSystemEvents(sessionId.value);
+    latestSystemEventId.value = event.id;
+    flashModeBanner();
+    scrollToBottom();
+  }
+}
+
+function avatarForRole(role: string) {
+  if (role === 'user') return '👤';
+  if (role === 'merchant') return '👨‍💼';
+  return '🤖';
+}
+
+function labelForRole(role: string) {
+  if (role === 'user') return '我';
+  if (role === 'merchant') return '商家客服';
+  return 'AI 小饱';
+}
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
@@ -93,10 +178,18 @@ function formatTime(iso: string): string {
 async function loadSession() {
   try {
     const userId = authStore.userProfile?.id || 'u1';
+    sessionId.value = `session_${userId}`;
+    systemEvents.value = loadSystemEvents(sessionId.value);
     const session = await getChatSession(userId);
     chatMode.value = session.mode;
-    const msgs = await getChatMessages(`session_${userId}`);
-    messages.value = msgs;
+    messages.value = await getChatMessages(sessionId.value);
+    if (
+      session.mode === 'human' &&
+      !systemEvents.value.some((e) => e.type === 'switch_human')
+    ) {
+      appendSystemEvent(sessionId.value, 'switch_human');
+      systemEvents.value = loadSystemEvents(sessionId.value);
+    }
     scrollToBottom();
   } catch (e) {
     console.error('Failed to load chat session', e);
@@ -105,15 +198,21 @@ async function loadSession() {
 
 async function syncMessages() {
   try {
-    const userId = authStore.userProfile?.id || 'u1';
-    const msgs = await getChatMessages(`session_${userId}`);
+    if (!sessionId.value) return;
+    const msgs = await getChatMessages(sessionId.value);
     if (msgs.length !== messages.value.length) {
       messages.value = msgs;
       scrollToBottom();
     }
+    const userId = authStore.userProfile?.id || 'u1';
     const session = await getChatSession(userId);
     if (session.mode !== chatMode.value) {
+      const prev = chatMode.value;
       chatMode.value = session.mode;
+      recordModeSwitch(session.mode === 'human' ? 'switch_human' : 'switch_bot');
+      if (prev === 'bot' && session.mode === 'human') {
+        uni.showToast({ title: '商家已接入人工', icon: 'none' });
+      }
     }
   } catch (e) {}
 }
@@ -154,9 +253,10 @@ async function handleSend() {
 
 async function switchToHuman() {
   try {
-    const userId = authStore.userProfile?.id || 'u1';
-    await switchToHumanService(`session_${userId}`);
+    if (!sessionId.value) return;
+    await switchToHumanService(sessionId.value);
     chatMode.value = 'human';
+    recordModeSwitch('switch_human');
     uni.showToast({ title: '已转接人工客服', icon: 'success' });
   } catch (e) {
     uni.showToast({ title: '转接失败，请重试', icon: 'none' });
@@ -165,19 +265,22 @@ async function switchToHuman() {
 
 async function switchToBot() {
   try {
-    const userId = authStore.userProfile?.id || 'u1';
-    await switchChatMode(`session_${userId}`, 'bot');
+    if (!sessionId.value) return;
+    await switchChatMode(sessionId.value, 'bot');
     chatMode.value = 'bot';
-    uni.showToast({ title: '已切换AI客服', icon: 'success' });
+    recordModeSwitch('switch_bot');
+    uni.showToast({ title: '已切换 AI 客服', icon: 'success' });
   } catch (e) {
     uni.showToast({ title: '切换失败，请重试', icon: 'none' });
   }
 }
 
 function scrollToBottom() {
-  scrollTop.value = 0;
+  scrollIntoView.value = '';
   nextTick(() => {
-    scrollTop.value = 99999;
+    setTimeout(() => {
+      scrollIntoView.value = 'chat-bottom-anchor';
+    }, 80);
   });
 }
 
@@ -188,6 +291,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer);
+  if (bannerPulseTimer) clearTimeout(bannerPulseTimer);
 });
 </script>
 
@@ -197,70 +301,259 @@ onUnmounted(() => {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #F8FAFC;
   overflow: hidden;
-}
+  background: #f8fafc;
 
-.chat-header {
-  background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
-  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  &::before {
-    content: '';
-    position: absolute;
-    top: -40rpx; right: -40rpx;
-    width: 200rpx; height: 200rpx;
-    background: rgba(255,255,255,0.08);
-    border-radius: 50%;
+  &.mode-bot {
+    --header-bg: linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #93c5fd 100%);
+    --banner-bg: #eff6ff;
+    --banner-text: #1e40af;
+    --send-bg: linear-gradient(135deg, #3b82f6, #2563eb);
+  }
+
+  &.mode-human {
+    --header-bg: linear-gradient(135deg, #047857 0%, #059669 50%, #34d399 100%);
+    --banner-bg: #ecfdf5;
+    --banner-text: #065f46;
+    --send-bg: linear-gradient(135deg, #059669, #10b981);
   }
 }
 
-.back-btn {
-  color: white;
-  font-size: 40rpx;
-  font-weight: bold;
-  padding: 8rpx 16rpx;
+.chat-header {
+  background: var(--header-bg);
+  padding-left: 28rpx;
+  padding-right: 28rpx;
+  padding-bottom: 20rpx;
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  flex-shrink: 0;
 }
 
-.header-info { flex: 1; }
-.header-title { color: white; font-size: 30rpx; font-weight: 900; display: block; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1); }
-.header-subtitle { color: rgba(255,255,255,0.8); font-size: 20rpx; display: block; font-weight: 500; }
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
 
-.switch-human-btn {
-  background: rgba(255,255,255,0.2);
-  border: 1rpx solid rgba(255,255,255,0.4);
-  border-radius: 24rpx;
-  padding: 10rpx 24rpx;
+.header-full {
+  width: 100%;
+}
+
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 100rpx;
+  margin-bottom: 10rpx;
+  font-size: 20rpx;
+  font-weight: 800;
+
+  &.bot {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  &.human {
+    background: rgba(255, 255, 255, 0.28);
+    color: white;
+  }
+}
+
+.mode-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 4rpx rgba(74, 222, 128, 0.35);
+}
+
+.header-title {
   color: white;
+  font-size: 32rpx;
+  font-weight: 900;
+  display: block;
+  line-height: 1.3;
+}
+
+.header-subtitle {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 20rpx;
+  display: block;
+  margin-top: 6rpx;
+  font-weight: 500;
+}
+
+.switch-btn {
+  border-radius: 100rpx;
+  padding: 12rpx 22rpx;
   font-size: 22rpx;
   font-weight: 800;
-  backdrop-filter: blur(8rpx);
+  flex-shrink: 0;
+  margin-top: 8rpx;
 }
 
-.mode-badge.human {
-  background: #4CAF50;
-  border-radius: 20rpx;
-  padding: 8rpx 20rpx;
-  color: white;
+.switch-to-human {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: white;
+  color: #047857;
+  box-shadow: 0 6rpx 20rpx rgba(5, 150, 105, 0.28);
+  border: 2rpx solid rgba(255, 255, 255, 0.9);
+  animation: humanBtnGlow 2s ease-in-out infinite;
+}
+
+.switch-icon {
   font-size: 24rpx;
-  font-weight: 700;
+}
+
+@keyframes humanBtnGlow {
+  0%,
+  100% {
+    box-shadow: 0 6rpx 20rpx rgba(5, 150, 105, 0.28);
+  }
+  50% {
+    box-shadow: 0 8rpx 28rpx rgba(5, 150, 105, 0.45);
+  }
+}
+
+.switch-to-bot {
+  background: rgba(255, 255, 255, 0.22);
+  color: white;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
+}
+
+.mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 16rpx 28rpx;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.35s ease;
+
+  &.bot {
+    background: var(--banner-bg);
+  }
+
+  &.human {
+    background: linear-gradient(90deg, #ecfdf5 0%, #d1fae5 50%, #ecfdf5 100%);
+    border-bottom: 2rpx solid rgba(5, 150, 105, 0.15);
+  }
+
+  &.pulse {
+    animation: bannerPulse 0.9s ease-in-out 2;
+  }
+
+  &.spotlight::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    animation: bannerShine 1.2s ease-out 1;
+  }
+}
+
+.banner-live {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  background: #059669;
+  color: white;
+  font-size: 18rpx;
+  font-weight: 800;
+  padding: 6rpx 12rpx;
+  border-radius: 100rpx;
+  flex-shrink: 0;
+}
+
+.live-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: liveBlink 1.2s ease-in-out infinite;
+}
+
+.banner-icon {
+  font-size: 36rpx;
+  flex-shrink: 0;
+}
+
+.banner-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-title {
+  display: block;
+  font-size: 24rpx;
+  font-weight: 900;
+  color: var(--banner-text);
+  line-height: 1.3;
+}
+
+.banner-text {
+  display: block;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: var(--banner-text);
+  opacity: 0.85;
+  line-height: 1.45;
+  margin-top: 4rpx;
+}
+
+@keyframes bannerPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+@keyframes bannerShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 140%;
+  }
+}
+
+@keyframes liveBlink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 .messages-area {
   flex: 1;
-  padding: 24rpx;
-  overflow-y: auto;
+  height: 0;
+  padding: 20rpx 24rpx;
+}
+
+.scroll-anchor {
+  height: 2rpx;
+  width: 100%;
 }
 
 .message-row {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
+  gap: 14rpx;
+  margin-bottom: 28rpx;
   align-items: flex-start;
 }
 
@@ -269,106 +562,174 @@ onUnmounted(() => {
 }
 
 .msg-avatar {
-  width: 64rpx;
-  height: 64rpx;
+  width: 68rpx;
+  height: 68rpx;
   border-radius: 50%;
-  background: #F1F5F9;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 32rpx;
   flex-shrink: 0;
+  background: #e2e8f0;
+
+  &.assistant {
+    background: #dbeafe;
+  }
+
+  &.merchant {
+    background: #d1fae5;
+  }
+
+  &.user {
+    background: #ffedd5;
+  }
 }
 
 .msg-bubble {
-  max-width: 70%;
-  background: white;
+  max-width: 72%;
   border-radius: 24rpx;
-  padding: 20rpx 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
-  border: 1rpx solid rgba(0,0,0,0.03);
+  padding: 18rpx 22rpx;
+  box-shadow: 0 2rpx 12rpx rgba(15, 23, 42, 0.05);
 }
 
 .role-user .msg-bubble {
-  background: linear-gradient(135deg, #E25C30, #EC784F);
+  background: linear-gradient(135deg, #e25c30, #ec784f);
   border: none;
-  box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.2);
+}
+
+.role-assistant .msg-bubble {
+  background: white;
+  border: 2rpx solid #bfdbfe;
+}
+
+.role-merchant .msg-bubble {
+  background: linear-gradient(135deg, #047857, #10b981);
+}
+
+.msg-role-label {
+  font-size: 20rpx;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.role-user .msg-role-label {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.role-assistant .msg-role-label {
+  color: #2563eb;
+}
+
+.role-merchant .msg-role-label {
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .msg-content {
   font-size: 28rpx;
-  color: #2D3436;
-  line-height: 1.6;
+  line-height: 1.65;
   display: block;
+  color: #1e293b;
 }
 
-.role-user .msg-content { color: white; }
+.role-user .msg-content,
+.role-merchant .msg-content {
+  color: white;
+}
 
 .msg-time {
   font-size: 20rpx;
-  color: #94A3B8;
   display: block;
   margin-top: 8rpx;
 }
 
-.role-user .msg-time { color: rgba(255,255,255,0.7); text-align: right; }
+.role-user .msg-time {
+  color: rgba(255, 255, 255, 0.75);
+  text-align: right;
+}
+
+.role-assistant .msg-time {
+  color: #94a3b8;
+}
+
+.role-merchant .msg-time {
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+}
 
 .typing {
   display: flex;
   gap: 8rpx;
   align-items: center;
-  padding: 20rpx 24rpx;
 }
 
 .dot {
   font-size: 20rpx;
-  color: #94A3B8;
+  color: #60a5fa;
   animation: blink 1.2s infinite;
 }
 
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes blink {
-  0%, 80%, 100% { opacity: 0.3; }
-  40% { opacity: 1; }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+  }
+  40% {
+    opacity: 1;
+  }
 }
 
 .input-bar {
   background: white;
-  border-top: 1rpx solid #F1F5F9;
+  border-top: 1rpx solid #e2e8f0;
   padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom, 0px));
   display: flex;
   gap: 16rpx;
   align-items: center;
   flex-shrink: 0;
-  box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.03);
+
+  &.bot .msg-input:focus {
+    border-color: #3b82f6;
+  }
+
+  &.human .msg-input:focus {
+    border-color: #059669;
+  }
 }
 
 .msg-input {
   flex: 1;
-  background: #FCFAF9;
-  border: 1rpx solid rgba(0,0,0,0.06);
+  min-height: 76rpx;
+  background: #f8fafc;
+  border: 2rpx solid #e2e8f0;
   border-radius: 40rpx;
-  padding: 16rpx 24rpx;
-  font-size: 26rpx;
-  color: #2D3436;
+  padding: 18rpx 24rpx;
+  font-size: 28rpx;
+  color: #1e293b;
   font-weight: 600;
-  &:focus {
-    background: white;
-    border-color: #E25C30;
-    box-shadow: 0 0 0 2rpx rgba(226, 92, 48, 0.1);
-  }
 }
 
 .send-btn {
-  background: linear-gradient(135deg, #E25C30, #EC784F);
+  min-height: 76rpx;
+  min-width: 120rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--send-bg);
   border-radius: 40rpx;
-  padding: 16rpx 32rpx;
+  padding: 16rpx 28rpx;
   color: white;
   font-size: 26rpx;
   font-weight: 800;
-  box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.12);
 }
 </style>
