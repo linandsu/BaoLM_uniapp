@@ -42,6 +42,10 @@ textarea,
 button,
 image {
   box-sizing: border-box;
+}
+
+/* 仅限制媒体元素，避免 view/text 在 flex 行布局里被压成 0 宽导致「空白卡片」 */
+image {
   max-width: 100%;
 }
 

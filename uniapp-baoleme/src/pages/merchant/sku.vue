@@ -30,7 +30,9 @@
     <!-- 菜品列表 -->
     <scroll-view class="dish-list" scroll-y>
       <view v-for="dish in filteredDishes" :key="dish.id" class="dish-row">
-        <DishImage class="dish-thumb-wrap" :src="dish.image" img-class="dish-thumb" />
+        <view class="dish-thumb-wrap">
+          <DishImage :src="dish.image" img-class="dish-thumb" />
+        </view>
         <view class="dish-info">
           <view class="dish-title-row">
             <text class="dish-name">{{ dish.name }}</text>
@@ -343,7 +345,11 @@ onMounted(fetchData);
   }
 }
 
-.dish-list { flex: 1; padding: 16rpx 24rpx; }
+.dish-list {
+  flex: 1;
+  height: 0;
+  padding: 16rpx 24rpx;
+}
 
 .dish-row {
   display: flex;
@@ -404,7 +410,10 @@ onMounted(fetchData);
   display: block;
 }
 
-.dish-info { flex: 1; }
+.dish-info {
+  flex: 1;
+  min-width: 0;
+}
 .dish-title-row {
   display: flex;
   align-items: center;
@@ -446,6 +455,7 @@ onMounted(fetchData);
   flex-direction: column;
   gap: 12rpx;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .toggle-btn {

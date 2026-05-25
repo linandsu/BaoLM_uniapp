@@ -88,7 +88,9 @@
         <!-- 菜品列表 -->
         <scroll-view class="dish-list" scroll-y>
           <view v-for="dish in filteredDishes" :key="dish.id" class="dish-card">
-            <DishImage class="dish-image-wrap" :src="dish.image" img-class="dish-image" />
+            <view class="dish-image-wrap">
+              <DishImage :src="dish.image" img-class="dish-image" />
+            </view>
             <view class="dish-info">
               <text class="dish-name">{{ dish.name }}</text>
               <text class="dish-desc">{{ dish.description }}</text>
@@ -555,7 +557,10 @@ function goToMine() {
   width: 100%;
   height: 100%;
 }
-.dish-info { flex: 1; }
+.dish-info {
+  flex: 1;
+  min-width: 0;
+}
 .dish-name { font-size: 26rpx; font-weight: 800; color: #2D3436; display: block; }
 .dish-desc { font-size: 18rpx; color: #94A3B8; display: block; margin: 6rpx 0; line-height: 1.5; }
 .dish-meta { display: flex; gap: 12rpx; margin-bottom: 8rpx; }

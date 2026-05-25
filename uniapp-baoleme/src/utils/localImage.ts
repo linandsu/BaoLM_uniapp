@@ -67,11 +67,18 @@ export function getDishLocalImage(dishId: string): string | null {
   return readDishMap()[dishId] || null;
 }
 
-/** 解析菜品展示图：本地缓存 > 已是本地路径 > 占位图（跳过远程 URL） */
+/**
+ * 解析菜品展示图：
+ * 1. 本机已缓存的商家上传图
+ * 2. 已是本地路径
+ * 3. 后端/默认远程 URL（保证能看见菜品）
+ * 4. 内置占位图
+ */
 export function resolveDishImage(dishId: string, remoteOrPath?: string): string {
   const local = getDishLocalImage(dishId);
   if (local) return local;
   if (remoteOrPath && isLocalImage(remoteOrPath)) return remoteOrPath;
+  if (remoteOrPath && isRemoteImage(remoteOrPath)) return remoteOrPath;
   return DISH_PLACEHOLDER;
 }
 

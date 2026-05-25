@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { DISH_PLACEHOLDER } from '../utils/localImage';
+import { DISH_PLACEHOLDER, isRemoteImage } from '../utils/localImage';
 
 const props = withDefaults(
   defineProps<{
@@ -22,16 +22,23 @@ const props = withDefaults(
 );
 
 const displaySrc = ref(props.src || DISH_PLACEHOLDER);
+let errorCount = 0;
 
 watch(
   () => props.src,
   (v) => {
+    errorCount = 0;
     displaySrc.value = v || DISH_PLACEHOLDER;
   },
   { immediate: true }
 );
 
 function onError() {
+  errorCount += 1;
+  if (errorCount === 1 && props.src && isRemoteImage(props.src)) {
+    displaySrc.value = DISH_PLACEHOLDER;
+    return;
+  }
   displaySrc.value = DISH_PLACEHOLDER;
 }
 </script>
