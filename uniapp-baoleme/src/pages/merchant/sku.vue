@@ -56,21 +56,22 @@
     </scroll-view>
 
     <!-- 新增菜品弹窗 -->
-    <view v-if="showAddModal" class="modal-overlay" @tap="showAddModal = false">
-      <view class="modal-panel" @tap.stop>
+    <view v-if="showAddModal" class="modal-overlay">
+      <view class="modal-bg" @tap="showAddModal = false"></view>
+      <view class="modal-panel">
         <view class="modal-header">
           <text class="modal-title">新增菜品</text>
           <text class="modal-close" @tap="showAddModal = false">×</text>
         </view>
 
-        <scroll-view class="modal-body" scroll-y>
+        <view class="modal-body">
           <view class="form-group">
             <text class="form-label">菜品名称 *</text>
-            <input class="form-input" v-model="form.name" placeholder="请输入菜品名称" />
+            <input class="form-input" v-model="form.name" placeholder="请输入菜品名称" :adjust-position="true" />
           </view>
           <view class="form-group">
             <text class="form-label">价格 (元) *</text>
-            <input class="form-input" v-model="form.price" type="digit" placeholder="如: 22.00" />
+            <input class="form-input" v-model="form.price" type="digit" placeholder="如: 22.00" :adjust-position="true" />
           </view>
           <view class="form-group">
             <text class="form-label">所属分类</text>
@@ -87,15 +88,15 @@
           </view>
           <view class="form-group">
             <text class="form-label">初始库存</text>
-            <input class="form-input" v-model="form.stock" type="number" placeholder="99" />
+            <input class="form-input" v-model="form.stock" type="number" placeholder="99" :adjust-position="true" />
           </view>
           <view class="form-group">
             <text class="form-label">图片地址 (选填)</text>
-            <input class="form-input" v-model="form.image" placeholder="Unsplash 图片链接" />
+            <input class="form-input" v-model="form.image" placeholder="Unsplash 图片链接" :adjust-position="true" />
           </view>
 
           <button class="btn-submit" @tap="handleAddDish">确认上架入库</button>
-        </scroll-view>
+        </view>
       </view>
     </view>
   </view>
@@ -343,10 +344,18 @@ onMounted(fetchData);
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
   z-index: 200;
   display: flex;
   align-items: flex-end;
+}
+
+.modal-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
 }
 
 .modal-panel {
@@ -356,6 +365,8 @@ onMounted(fetchData);
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .modal-header {
@@ -369,7 +380,12 @@ onMounted(fetchData);
 .modal-title { font-size: 34rpx; font-weight: 800; color: #2D3436; }
 .modal-close { font-size: 48rpx; color: #94A3B8; line-height: 1; }
 
-.modal-body { padding: 24rpx 32rpx; }
+.modal-body {
+  padding: 24rpx 32rpx;
+  overflow-y: auto;
+  max-height: 60vh;
+  -webkit-overflow-scrolling: touch;
+}
 
 .form-group { margin-bottom: 24rpx; }
 .form-label { font-size: 26rpx; font-weight: 800; color: #475569; display: block; margin-bottom: 8rpx; }

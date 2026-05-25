@@ -408,11 +408,13 @@ function handleLogout() {
 }
 .logout-btn {
   background: rgba(255,255,255,0.2);
-  padding: 6rpx 16rpx;
+  padding: 8rpx 20rpx;
   border-radius: 20rpx;
   font-size: 20rpx;
   font-weight: 700;
   color: rgba(255,255,255,0.9);
+  min-width: 60rpx;
+  text-align: center;
 }
 
 .profile-row {
