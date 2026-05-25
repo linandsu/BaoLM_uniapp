@@ -7,8 +7,8 @@
 
 // 🔴 当前: MOCK 模式（由前端 Express server.ts 提供，内存数据）
 // ✅ 对接SSM后端时修改为: 'http://你的服务器IP:8081'
-// export const BASE_URL = 'http://localhost:8081';
-export const BASE_URL = 'http://192.168.1.10:8081';
+export const BASE_URL = 'http://192.168.1.10:8081';  // 手机访问时用局域网IP
+// export const BASE_URL = 'http://localhost:8081';  // 电脑浏览器测试用
 
 export const API_PREFIX = '/api';
 

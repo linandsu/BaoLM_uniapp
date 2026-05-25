@@ -175,6 +175,7 @@ async function switchToBot() {
 }
 
 function scrollToBottom() {
+  scrollTop.value = 0;
   nextTick(() => {
     scrollTop.value = 99999;
   });
