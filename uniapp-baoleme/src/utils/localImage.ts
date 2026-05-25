@@ -35,6 +35,10 @@ export function isRemoteImage(url: string) {
   return /^https?:\/\//i.test(url || '');
 }
 
+export function isDataImage(url: string) {
+  return !!url && url.startsWith('data:image');
+}
+
 export function isLocalImage(url: string) {
   if (!url) return false;
   return (
@@ -42,8 +46,9 @@ export function isLocalImage(url: string) {
     url.startsWith('_doc') ||
     url.startsWith('_www') ||
     url.startsWith('wxfile://') ||
-    url.startsWith('data:') ||
-    url.startsWith('/static/')
+    isDataImage(url) ||
+    url.startsWith('/static/') ||
+    (/^\/(storage|data|var)/i.test(url) && !url.startsWith('http'))
   );
 }
 
@@ -69,18 +74,64 @@ export function getDishLocalImage(dishId: string): string | null {
 }
 
 /**
- * 解析菜品展示图：
- * 1. 本机已缓存的商家上传图
- * 2. 已是本地路径
- * 3. 后端/默认远程 URL（保证能看见菜品）
+ * 解析菜品展示图（跨设备以服务端 image 为准）：
+ * 1. 后端返回的 data URL / http URL（商家上传后同步到服务端）
+ * 2. 本机缓存（仅作补充）
+ * 3. 本机沙盒路径（仅当前设备有效）
  * 4. 内置占位图
  */
 export function resolveDishImage(dishId: string, remoteOrPath?: string): string {
+  if (remoteOrPath && (isRemoteImage(remoteOrPath) || isDataImage(remoteOrPath))) {
+    return remoteOrPath;
+  }
   const local = getDishLocalImage(dishId);
-  if (local) return local;
+  if (local && (isDataImage(local) || isRemoteImage(local))) return local;
+  if (local && isLocalImage(local)) return local;
   if (remoteOrPath && isLocalImage(remoteOrPath)) return remoteOrPath;
-  if (remoteOrPath && isRemoteImage(remoteOrPath)) return remoteOrPath;
   return DISH_PLACEHOLDER;
+}
+
+const MAX_DISH_IMAGE_BASE64 = 320000;
+
+function readPathAsDataUrl(filePath: string): Promise<string> {
+  if (isDataImage(filePath)) return Promise.resolve(filePath);
+  return new Promise((resolve, reject) => {
+    uni.getFileSystemManager().readFile({
+      filePath,
+      encoding: 'base64',
+      success: (res) => {
+        const mime = /\.png/i.test(filePath) ? 'image/png' : 'image/jpeg';
+        resolve(`data:${mime};base64,${res.data}`);
+      },
+      fail: reject,
+    });
+  });
+}
+
+function compressImagePath(src: string, quality: number): Promise<string> {
+  return new Promise((resolve) => {
+    uni.compressImage({
+      src,
+      quality,
+      success: (r) => resolve(r.tempFilePath),
+      fail: () => resolve(src),
+    });
+  });
+}
+
+/** 压缩并转为 Base64，写入后端后各端均可展示 */
+export async function encodeDishImageForServer(tempOrSavedPath: string): Promise<string> {
+  let path = tempOrSavedPath;
+  path = await compressImagePath(path, 68);
+  let dataUrl = await readPathAsDataUrl(path);
+  if (dataUrl.length > MAX_DISH_IMAGE_BASE64) {
+    path = await compressImagePath(tempOrSavedPath, 42);
+    dataUrl = await readPathAsDataUrl(path);
+  }
+  if (dataUrl.length > MAX_DISH_IMAGE_BASE64) {
+    throw new Error('图片过大，请换一张更小的照片');
+  }
+  return dataUrl;
 }
 
 export function setUserAvatarLocal(path: string) {

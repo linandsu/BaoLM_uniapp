@@ -106,7 +106,7 @@
                 <text>从相册选择图片（保存到本机）</text>
               </view>
             </view>
-            <text class="picker-hint">不再使用网络图片，加载更快</text>
+            <text class="picker-hint">图片将同步到服务器，顾客端各手机均可显示</text>
           </view>
 
           <view class="btn-submit tap-target" @tap="handleAddDish">确认上架入库</view>
@@ -124,7 +124,7 @@ import { goBack } from '../../utils/nav';
 import { useSafeTop } from '../../composables/useSafeTop';
 import DishImage from '../../components/DishImage.vue';
 import {
-  persistImage,
+  encodeDishImageForServer,
   resolveDishImage,
   setDishLocalImage,
   DISH_PLACEHOLDER,
@@ -187,15 +187,10 @@ function pickDishImage() {
     sourceType: ['album', 'camera'],
     success: async (res) => {
       if (!res.tempFilePaths?.length) return;
-      try {
-        const saved = await persistImage(res.tempFilePaths[0]);
-        form.value.image = saved;
-        form.value.imagePreview = saved;
-        uni.showToast({ title: '图片已保存到本机', icon: 'success' });
-      } catch {
-        form.value.imagePreview = res.tempFilePaths[0];
-        form.value.image = res.tempFilePaths[0];
-      }
+      const temp = res.tempFilePaths[0];
+      form.value.imagePreview = temp;
+      form.value.image = temp;
+      uni.showToast({ title: '图片已选择', icon: 'success' });
     },
   });
 }
@@ -235,7 +230,17 @@ async function handleAddDish() {
   }
   try {
     const newId = 'd_' + Date.now();
-    const imagePath = form.value.image || DISH_PLACEHOLDER;
+    let imagePath = DISH_PLACEHOLDER;
+    if (form.value.image && !form.value.image.startsWith('data:')) {
+      uni.showLoading({ title: '上传图片...' });
+      try {
+        imagePath = await encodeDishImageForServer(form.value.image);
+      } finally {
+        uni.hideLoading();
+      }
+    } else if (form.value.image) {
+      imagePath = form.value.image;
+    }
     await addDish({
       id: newId,
       name: form.value.name,
@@ -247,9 +252,7 @@ async function handleAddDish() {
       sales: 0,
       status: 'active',
     });
-    if (form.value.image) {
-      setDishLocalImage(newId, form.value.image);
-    }
+    setDishLocalImage(newId, imagePath);
     showAddModal.value = false;
     form.value = {
       name: '',

@@ -78,7 +78,11 @@
           </view>
           <view class="msg-bubble">
             <text class="msg-role-label">{{ labelForRole(item.data.role) }}</text>
-            <text class="msg-content">{{ item.data.content }}</text>
+            <ChatOrderCard
+              v-if="orderCardFromContent(item.data.content)"
+              :order="orderCardFromContent(item.data.content)!"
+            />
+            <text v-else class="msg-content">{{ item.data.content }}</text>
             <text class="msg-time">{{ formatTime(item.data.timestamp) }}</text>
           </view>
         </view>
@@ -96,6 +100,10 @@
     </scroll-view>
 
     <view class="input-bar" :class="chatMode">
+      <view class="order-pick-btn tap-target" @tap="openOrderPicker">
+        <text class="order-pick-icon">📋</text>
+        <text class="order-pick-text">订单</text>
+      </view>
       <input
         class="msg-input"
         v-model="typedMessage"
@@ -110,6 +118,38 @@
         <text>发送</text>
       </view>
     </view>
+
+    <view v-if="showOrderPicker" class="order-picker-overlay">
+      <view class="order-picker-bg" @tap="showOrderPicker = false" />
+      <view class="order-picker-panel" @tap.stop>
+        <text class="order-picker-title">选择要咨询的订单</text>
+        <text class="order-picker-desc">发送后商家可在会话中查看订单详情</text>
+        <scroll-view class="order-picker-list" scroll-y>
+          <view
+            v-for="order in myOrders"
+            :key="order.id"
+            class="order-pick-row tap-target"
+            @tap="sendOrderCard(order)"
+          >
+            <view class="order-pick-head">
+              <text class="order-pick-id">#{{ order.id.slice(-8) }}</text>
+              <text class="order-pick-status" :class="'st-' + order.status">
+                {{ orderStatusLabel(order.status) }}
+              </text>
+            </view>
+            <text class="order-pick-items">{{ orderItemsSummary(order) }}</text>
+            <text class="order-pick-total">¥{{ order.totalPrice.toFixed(2) }}</text>
+          </view>
+          <view v-if="myOrders.length === 0" class="order-pick-empty">
+            <text>暂无订单，请先下单后再咨询</text>
+          </view>
+        </scroll-view>
+        <view class="order-picker-close tap-target" @tap="showOrderPicker = false">
+          <text>取消</text>
+        </view>
+      </view>
+    </view>
+
     <CustomTabBar active="chat" />
   </view>
 </template>
@@ -117,9 +157,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { getChatSession, getChatMessages, sendChatMessage, switchToHumanService, switchChatMode } from '../../api/chat';
+import { getOrders } from '../../api/orders';
 import { useAuthStore } from '../../stores/auth';
 import CustomTabBar from '../../components/CustomTabBar.vue';
 import ChatSystemNotice from '../../components/ChatSystemNotice.vue';
+import ChatOrderCard from '../../components/ChatOrderCard.vue';
 import { useSafeTop } from '../../composables/useSafeTop';
 import {
   loadSystemEvents,
@@ -127,8 +169,13 @@ import {
   buildChatTimeline,
   type ChatSystemEventType,
 } from '../../utils/chatTimeline';
-import type { Message } from '../../types';
+import type { Message, Order, OrderStatus } from '../../types';
 import { registerUserAvatar, resolveUserAvatar } from '../../utils/localImage';
+import {
+  buildOrderCardMessage,
+  parseOrderCardMessage,
+  ORDER_STATUS_LABELS,
+} from '../../utils/orderCard';
 
 const authStore = useAuthStore();
 
@@ -143,6 +190,8 @@ const scrollIntoView = ref('');
 const safeTopStyle = useSafeTop(12);
 const modeBannerPulse = ref(false);
 const latestSystemEventId = ref('');
+const showOrderPicker = ref(false);
+const myOrders = ref<Order[]>([]);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let bannerPulseTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -182,6 +231,37 @@ function labelForRole(role: string) {
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function orderCardFromContent(content: string) {
+  return parseOrderCardMessage(content);
+}
+
+function orderStatusLabel(status: OrderStatus) {
+  return ORDER_STATUS_LABELS[status] || status;
+}
+
+function orderItemsSummary(order: Order) {
+  const names = order.items.slice(0, 2).map((i) => `${i.dish.name}×${i.quantity}`);
+  const more = order.items.length > 2 ? ` 等${order.items.length}件` : '';
+  return names.join('、') + more;
+}
+
+async function loadMyOrders() {
+  try {
+    const userId = authStore.userProfile?.id || 'u1';
+    const all = await getOrders();
+    myOrders.value = all
+      .filter((o) => o.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch {
+    myOrders.value = [];
+  }
+}
+
+async function openOrderPicker() {
+  await loadMyOrders();
+  showOrderPicker.value = true;
 }
 
 async function loadSession() {
@@ -228,12 +308,9 @@ async function syncMessages() {
   } catch (e) {}
 }
 
-async function handleSend() {
-  const content = typedMessage.value.trim();
-  if (!content) return;
-  typedMessage.value = '';
-
+async function pushUserMessage(content: string) {
   const userId = authStore.userProfile?.id || 'u1';
+  const sid = sessionId.value || `session_${userId}`;
   const userMsg: Message = {
     id: 'tmp_' + Date.now(),
     role: 'user',
@@ -246,20 +323,37 @@ async function handleSend() {
   if (chatMode.value === 'bot') {
     isAiTyping.value = true;
     try {
-      await sendChatMessage({ sessionId: `session_${userId}`, role: 'user', content });
-      const updated = await getChatMessages(`session_${userId}`);
-      messages.value = updated;
+      await sendChatMessage({ sessionId: sid, role: 'user', content });
+      messages.value = await getChatMessages(sid);
     } catch (e) {
       console.error('Send failed', e);
+      uni.showToast({ title: '发送失败', icon: 'none' });
     } finally {
       isAiTyping.value = false;
       scrollToBottom();
     }
   } else {
     try {
-      await sendChatMessage({ sessionId: `session_${userId}`, role: 'user', content });
-    } catch (e) {}
+      await sendChatMessage({ sessionId: sid, role: 'user', content });
+      await syncMessages();
+    } catch {
+      uni.showToast({ title: '发送失败', icon: 'none' });
+    }
   }
+}
+
+async function handleSend() {
+  const content = typedMessage.value.trim();
+  if (!content) return;
+  typedMessage.value = '';
+  await pushUserMessage(content);
+}
+
+async function sendOrderCard(order: Order) {
+  showOrderPicker.value = false;
+  const content = buildOrderCardMessage(order);
+  await pushUserMessage(content);
+  uni.showToast({ title: '订单已发送', icon: 'success' });
 }
 
 async function switchToHuman() {
@@ -749,5 +843,138 @@ onUnmounted(() => {
   font-size: 26rpx;
   font-weight: 800;
   box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.12);
+}
+
+.order-pick-btn {
+  flex-shrink: 0;
+  min-width: 88rpx;
+  min-height: 76rpx;
+  border-radius: 20rpx;
+  background: #fff7ed;
+  border: 1rpx solid rgba(226, 92, 48, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+}
+
+.order-pick-icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.order-pick-text {
+  font-size: 18rpx;
+  font-weight: 800;
+  color: #e25c30;
+}
+
+.order-picker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.order-picker-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.order-picker-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 32rpx 28rpx calc(env(safe-area-inset-bottom, 0px) + 24rpx);
+}
+
+.order-picker-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #1e293b;
+  display: block;
+}
+
+.order-picker-desc {
+  font-size: 22rpx;
+  color: #94a3b8;
+  margin: 8rpx 0 20rpx;
+  display: block;
+}
+
+.order-picker-list {
+  max-height: 48vh;
+}
+
+.order-pick-row {
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 20rpx;
+  padding: 20rpx 22rpx;
+  margin-bottom: 16rpx;
+}
+
+.order-pick-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.order-pick-id {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #334155;
+}
+
+.order-pick-status {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #64748b;
+
+  &.st-pending { color: #b45309; }
+  &.st-completed { color: #047857; }
+}
+
+.order-pick-items {
+  font-size: 24rpx;
+  color: #64748b;
+  display: block;
+}
+
+.order-pick-total {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #e25c30;
+  margin-top: 8rpx;
+  display: block;
+}
+
+.order-pick-empty {
+  padding: 48rpx 0;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 26rpx;
+}
+
+.order-picker-close {
+  margin-top: 16rpx;
+  text-align: center;
+  padding: 22rpx;
+  background: #f1f5f9;
+  border-radius: 20rpx;
+  color: #64748b;
+  font-size: 28rpx;
+  font-weight: 700;
 }
 </style>

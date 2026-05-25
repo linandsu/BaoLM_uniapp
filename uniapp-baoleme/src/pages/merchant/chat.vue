@@ -86,21 +86,17 @@
           >
             <text>接管人工</text>
           </view>
-          <view
-            v-if="currentSession?.mode === 'human'"
-            class="resolve-btn tap-target"
-            @tap="resolveSession"
-          >
-            <text>结束会话</text>
-          </view>
         </view>
       </view>
 
       <scroll-view
         class="chat-messages"
         scroll-y
+        :scroll-top="scrollTop"
         :scroll-into-view="scrollIntoView"
-        scroll-with-animation
+        :scroll-with-animation="scrollAnimated"
+        :show-scrollbar="false"
+        :enable-back-to-top="false"
       >
         <template
           v-for="item in timeline"
@@ -129,7 +125,11 @@
             </view>
             <view class="msg-bubble">
               <text class="msg-role-label">{{ roleLabel(item.data.role) }}</text>
-              <text class="msg-content">{{ item.data.content }}</text>
+              <ChatOrderCard
+                v-if="orderCardFromContent(item.data.content)"
+                :order="orderCardFromContent(item.data.content)!"
+              />
+              <text v-else class="msg-content">{{ item.data.content }}</text>
               <text class="msg-time">{{ formatTime(item.data.timestamp) }}</text>
             </view>
           </view>
@@ -137,38 +137,44 @@
         <view id="merchant-chat-anchor" class="scroll-anchor" />
       </scroll-view>
 
-      <view v-if="currentSession?.mode === 'human'" class="reply-bar">
-        <input
-          class="reply-input"
-          v-model="replyText"
-          placeholder="输入回复，顾客会实时看到..."
-          @confirm="sendReply"
-        />
-        <view class="send-btn tap-target" @tap="sendReply">
-          <text>发送</text>
+      <!-- 底部固定：输入框 / AI 提示始终可见 -->
+      <view class="chat-footer">
+        <view v-if="currentSession?.mode === 'human'" class="reply-bar">
+          <input
+            class="reply-input"
+            v-model="replyText"
+            placeholder="输入回复，顾客会实时看到..."
+            :adjust-position="true"
+            confirm-type="send"
+            @confirm="sendReply"
+          />
+          <view class="send-btn tap-target" @tap="sendReply">
+            <text>发送</text>
+          </view>
         </view>
-      </view>
-      <view v-else class="bot-mode-hint">
-        <text class="hint-icon">🤖</text>
-        <text>当前由 AI 小饱自动回复。如需真人接待，请点击「接管人工」</text>
+        <view v-else class="bot-mode-hint">
+          <text class="hint-icon">🤖</text>
+          <text>当前由 AI 小饱自动回复。如需真人接待，请点击「接管人工」</text>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import {
   getAllSessions,
   getSessionMessages,
   sendMerchantMessage,
   takeoverSession as apiTakeover,
-  resolveSession as apiResolve,
 } from '../../api/chat';
 import type { Message } from '../../types';
 import { goBack } from '../../utils/nav';
 import { useSafeTop } from '../../composables/useSafeTop';
 import ChatSystemNotice from '../../components/ChatSystemNotice.vue';
+import ChatOrderCard from '../../components/ChatOrderCard.vue';
+import { parseOrderCardMessage } from '../../utils/orderCard';
 import {
   loadSystemEvents,
   appendSystemEvent,
@@ -189,6 +195,9 @@ const chatMessages = ref<Message[]>([]);
 const systemEvents = ref<ReturnType<typeof loadSystemEvents>>([]);
 const replyText = ref('');
 const scrollIntoView = ref('');
+const scrollTop = ref(0);
+const scrollAnimated = ref(false);
+const scrollTick = ref(0);
 const latestSystemEventId = ref('');
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastSessionMode: Record<string, 'bot' | 'human'> = {};
@@ -225,14 +234,34 @@ function recordModeSwitch(type: ChatSystemEventType) {
   }
 }
 
-function scrollToBottom() {
+function scrollToBottom(animate = false) {
+  scrollAnimated.value = animate;
   scrollIntoView.value = '';
+  scrollTick.value += 1;
+  const top = 99990 + scrollTick.value;
+
+  const apply = () => {
+    scrollTop.value = top;
+    scrollIntoView.value = 'merchant-chat-anchor';
+  };
+
   nextTick(() => {
+    apply();
+    setTimeout(apply, 120);
+    setTimeout(apply, 320);
     setTimeout(() => {
-      scrollIntoView.value = 'merchant-chat-anchor';
-    }, 80);
+      apply();
+      scrollAnimated.value = false;
+    }, 520);
   });
 }
+
+watch(
+  () => [timeline.value.length, selectedSessionId.value] as const,
+  ([len, sid]) => {
+    if (sid && len > 0) scrollToBottom(false);
+  }
+);
 
 function roleIcon(role: string) {
   if (role === 'user') return '👤';
@@ -249,6 +278,10 @@ function roleLabel(role: string) {
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+}
+
+function orderCardFromContent(content: string) {
+  return parseOrderCardMessage(content);
 }
 
 function onHeaderBack() {
@@ -288,11 +321,8 @@ async function selectSession(id: string) {
 async function fetchMessages() {
   if (!selectedSessionId.value) return;
   try {
-    const prevLen = chatMessages.value.length;
     chatMessages.value = await getSessionMessages(selectedSessionId.value);
-    if (chatMessages.value.length !== prevLen) {
-      scrollToBottom();
-    }
+    scrollToBottom(false);
   } catch (e) {
     console.error(e);
   }
@@ -304,7 +334,7 @@ async function sendReply() {
     await sendMerchantMessage(selectedSessionId.value, replyText.value.trim());
     replyText.value = '';
     await fetchMessages();
-    scrollToBottom();
+    scrollToBottom(true);
   } catch (e) {
     uni.showToast({ title: '发送失败', icon: 'none' });
   }
@@ -318,21 +348,6 @@ async function takeoverSession() {
     lastSessionMode[selectedSessionId.value] = 'human';
     await fetchSessions();
     uni.showToast({ title: '已接管为人工服务', icon: 'success' });
-  } catch (e) {
-    uni.showToast({ title: '操作失败', icon: 'none' });
-  }
-}
-
-async function resolveSession() {
-  if (!selectedSessionId.value) return;
-  try {
-    await apiResolve(selectedSessionId.value);
-    recordModeSwitch('switch_bot');
-    selectedSessionId.value = null;
-    chatMessages.value = [];
-    systemEvents.value = [];
-    await fetchSessions();
-    uni.showToast({ title: '会话已结束', icon: 'success' });
   } catch (e) {
     uni.showToast({ title: '操作失败', icon: 'none' });
   }
@@ -353,11 +368,13 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .merchant-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   background: #f1f5f9;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .merchant-header {
@@ -571,6 +588,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
 .chat-toolbar {
@@ -634,24 +652,24 @@ onUnmounted(() => {
   box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.25);
 }
 
-.resolve-btn {
-  background: #f1f5f9;
-  color: #64748b;
-  font-size: 24rpx;
-  padding: 14rpx 28rpx;
-  border-radius: 100rpx;
-  font-weight: 800;
-}
-
 .chat-messages {
   flex: 1;
   height: 0;
+  width: 100%;
   padding: 24rpx;
   background: #f8fafc;
+  box-sizing: border-box;
+}
+
+.chat-footer {
+  flex-shrink: 0;
+  background: #fff;
+  z-index: 4;
+  box-shadow: 0 -6rpx 24rpx rgba(15, 23, 42, 0.08);
 }
 
 .scroll-anchor {
-  height: 2rpx;
+  height: 24rpx;
   width: 100%;
 }
 
@@ -762,13 +780,10 @@ onUnmounted(() => {
 }
 
 .reply-bar {
-  background: white;
-  border-top: 1rpx solid #e2e8f0;
   padding: 16rpx 24rpx calc(env(safe-area-inset-bottom, 0px) + 16rpx);
   display: flex;
   gap: 16rpx;
   align-items: center;
-  flex-shrink: 0;
 }
 
 .reply-input {
@@ -796,12 +811,10 @@ onUnmounted(() => {
 
 .bot-mode-hint {
   background: #eff6ff;
-  border-top: 1rpx solid #bfdbfe;
   padding: 24rpx 32rpx calc(env(safe-area-inset-bottom, 0px) + 24rpx);
   display: flex;
   align-items: flex-start;
   gap: 12rpx;
-  flex-shrink: 0;
 }
 
 .hint-icon {
