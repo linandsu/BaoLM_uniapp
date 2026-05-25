@@ -135,7 +135,7 @@ async function handleSend() {
   if (chatMode.value === 'bot') {
     isAiTyping.value = true;
     try {
-      await sendChatMessage(`session_${userId}`, content, 'user');
+      await sendChatMessage({ sessionId: `session_${userId}`, role: 'user', content });
       const updated = await getChatMessages(`session_${userId}`);
       messages.value = updated;
     } catch (e) {
@@ -146,7 +146,7 @@ async function handleSend() {
     }
   } else {
     try {
-      await sendChatMessage(`session_${userId}`, content, 'user');
+      await sendChatMessage({ sessionId: `session_${userId}`, role: 'user', content });
     } catch (e) {}
   }
 }

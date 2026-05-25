@@ -57,6 +57,11 @@ export function takeoverSession(sessionId: string) {
   return switchChatMode(sessionId, 'human');
 }
 
+/** 切换到人工客服（C端用户请求转人工）*/
+export function switchToHumanService(sessionId: string) {
+  return switchChatMode(sessionId, 'human');
+}
+
 /** [MOCK] 结束会话 - SSM: PUT /api/chat/session/{sessionId}/resolve */
 export function resolveSession(sessionId: string): Promise<any> {
   return request({ url: `/chat/session/${sessionId}/resolve`, method: 'PUT' });
