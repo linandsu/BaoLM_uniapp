@@ -138,11 +138,13 @@ onUnmounted(() => {
 }
 
 .page-header {
-  background: linear-gradient(135deg, #FF6B35, #FF926B);
-  padding: 60rpx 32rpx 24rpx;
+  background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
+  padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
+  position: relative;
+  overflow: hidden;
 }
 
 .back-btn {
@@ -154,8 +156,9 @@ onUnmounted(() => {
 
 .page-title {
   color: white;
-  font-size: 36rpx;
-  font-weight: 800;
+  font-size: 34rpx;
+  font-weight: 900;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
 }
 
 .orders-list {
@@ -172,14 +175,15 @@ onUnmounted(() => {
 }
 
 .empty-icon { font-size: 80rpx; }
-.empty-text { color: #94A3B8; font-size: 28rpx; }
+.empty-text { color: #94A3B8; font-size: 26rpx; font-weight: 500; }
 
 .order-card {
   background: white;
-  border-radius: 24rpx;
+  border-radius: 28rpx;
   padding: 32rpx;
   margin-bottom: 24rpx;
-  box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.06);
+  box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.04);
+  border: 1rpx solid rgba(0,0,0,0.03);
 }
 
 .order-header {
@@ -187,60 +191,65 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid #F1F5F9;
 }
 
-.order-id { font-size: 24rpx; color: #94A3B8; font-weight: 600; }
+.order-id { font-size: 20rpx; color: #94A3B8; font-weight: 600; font-family: monospace; }
 
 .order-status {
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: 20rpx;
+  font-weight: 800;
   padding: 6rpx 16rpx;
   border-radius: 20rpx;
 }
 
-.status-pending { background: #FFF3CD; color: #856404; }
-.status-accepted { background: #D1ECF1; color: #0C5460; }
-.status-cooking { background: #FFE5D0; color: #FF6B35; }
-.status-delivering { background: #D4EDDA; color: #155724; }
+.status-pending { background: #FEF3C7; color: #92400E; }
+.status-accepted { background: #DBEAFE; color: #1E40AF; }
+.status-cooking { background: #FFF3EF; color: #E25C30; }
+.status-delivering { background: #D1FAE5; color: #065F46; }
 .status-completed { background: #E8F5E9; color: #2E7D32; }
-.status-cancelled { background: #F8D7DA; color: #721C24; }
+.status-cancelled { background: #FEE2E2; color: #991B1B; }
 
 .order-items { margin-bottom: 16rpx; }
 
 .order-item {
   display: flex;
   justify-content: space-between;
-  padding: 8rpx 0;
-  border-bottom: 1rpx solid #F1F5F9;
+  padding: 10rpx 0;
+  border-bottom: 1rpx solid #F8FAFC;
 }
 
-.item-name { flex: 1; font-size: 26rpx; color: #2D3436; }
-.item-qty { font-size: 24rpx; color: #94A3B8; margin: 0 16rpx; }
-.item-price { font-size: 26rpx; color: #FF6B35; font-weight: 700; }
+.item-name { flex: 1; font-size: 24rpx; color: #2D3436; font-weight: 600; }
+.item-qty { font-size: 22rpx; color: #94A3B8; margin: 0 16rpx; }
+.item-price { font-size: 24rpx; color: #2D3436; font-weight: 700; }
 
 .order-footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F1F5F9;
 }
 
 .order-meta { display: flex; flex-direction: column; gap: 4rpx; }
-.order-time { font-size: 22rpx; color: #94A3B8; }
-.order-address { font-size: 22rpx; color: #7A8B8B; }
-.order-total { font-size: 32rpx; font-weight: 800; color: #FF6B35; }
+.order-time { font-size: 20rpx; color: #94A3B8; }
+.order-address { font-size: 20rpx; color: #7A8B8B; }
+.order-total { font-size: 30rpx; font-weight: 900; color: #DC2626; }
 
 .order-note {
   margin-top: 12rpx;
   padding: 12rpx 16rpx;
   background: #FFF8F5;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(226, 92, 48, 0.08);
   display: flex;
   gap: 8rpx;
 }
 
-.note-label { font-size: 22rpx; color: #94A3B8; }
-.note-text { font-size: 22rpx; color: #2D3436; flex: 1; }
+.note-label { font-size: 20rpx; color: #E25C30; font-weight: 700; }
+.note-text { font-size: 20rpx; color: #2D3436; flex: 1; }
 
 .order-progress {
   display: flex;
@@ -266,12 +275,12 @@ onUnmounted(() => {
   margin-bottom: 8rpx;
 }
 
-.progress-step.active .step-dot { background: #FF6B35; }
-.progress-step.done .step-dot { background: #4CAF50; }
+.progress-step.active .step-dot { background: #E25C30; box-shadow: 0 0 0 4rpx rgba(226, 92, 48, 0.2); }
+.progress-step.done .step-dot { background: #059669; }
 
-.step-label { font-size: 20rpx; color: #94A3B8; }
-.progress-step.active .step-label { color: #FF6B35; font-weight: 700; }
-.progress-step.done .step-label { color: #4CAF50; }
+.step-label { font-size: 18rpx; color: #94A3B8; font-weight: 600; }
+.progress-step.active .step-label { color: #E25C30; font-weight: 800; }
+.progress-step.done .step-label { color: #059669; }
 
 .step-line {
   position: absolute;
@@ -282,5 +291,5 @@ onUnmounted(() => {
   background: #E2E8F0;
 }
 
-.progress-step.done .step-line { background: #4CAF50; }
+.progress-step.done .step-line { background: #059669; }
 </style>

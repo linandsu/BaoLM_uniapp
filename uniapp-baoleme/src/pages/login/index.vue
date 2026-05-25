@@ -248,7 +248,7 @@ async function handleRegister() {
 <style lang="scss" scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #FFF7F2 0%, #FFF2E7 50%, #F2FAF6 100%);
+  background: linear-gradient(160deg, #FFF7F2 0%, #FFF2E7 40%, #F2FAF6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,22 +263,39 @@ async function handleRegister() {
   pointer-events: none;
 }
 .bg-orb-1 {
-  top: 80rpx; left: 60rpx;
-  width: 400rpx; height: 400rpx;
-  background: rgba(226, 92, 48, 0.05);
-  filter: blur(80rpx);
+  top: 60rpx; left: 40rpx;
+  width: 500rpx; height: 500rpx;
+  background: rgba(226, 92, 48, 0.06);
+  filter: blur(100rpx);
+  animation: floatOrb1 20s ease-in-out infinite;
 }
 .bg-orb-2 {
-  bottom: 100rpx; right: 60rpx;
-  width: 480rpx; height: 480rpx;
-  background: rgba(231, 168, 75, 0.06);
-  filter: blur(100rpx);
+  bottom: 80rpx; right: 40rpx;
+  width: 560rpx; height: 560rpx;
+  background: rgba(231, 168, 75, 0.07);
+  filter: blur(120rpx);
+  animation: floatOrb2 24s ease-in-out infinite;
 }
 .bg-orb-3 {
-  top: 33%; right: 25%;
-  width: 360rpx; height: 360rpx;
-  background: rgba(126, 168, 156, 0.05);
-  filter: blur(80rpx);
+  top: 30%; right: 20%;
+  width: 400rpx; height: 400rpx;
+  background: rgba(126, 168, 156, 0.06);
+  filter: blur(90rpx);
+  animation: floatOrb3 28s ease-in-out infinite;
+}
+
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40rpx, -35rpx) scale(1.08); }
+  66% { transform: translate(-15rpx, 25rpx) scale(0.97); }
+}
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30rpx, 40rpx) scale(1.12); }
+}
+@keyframes floatOrb3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(25rpx, -25rpx) scale(0.95); }
 }
 
 .login-container {
@@ -287,7 +304,7 @@ async function handleRegister() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 32rpx;
+  gap: 24rpx;
   position: relative;
   z-index: 1;
 }
@@ -305,25 +322,29 @@ async function handleRegister() {
   border: 1rpx solid rgba(226,92,48,0.15);
   border-radius: 100rpx;
   padding: 8rpx 24rpx;
+  backdrop-filter: blur(8rpx);
 }
 .badge-text {
-  font-size: 20rpx;
+  font-size: 18rpx;
   color: #3C2F2B;
-  font-weight: 700;
-  letter-spacing: 2rpx;
+  font-weight: 800;
+  letter-spacing: 3rpx;
+  text-transform: uppercase;
 }
 
 .brand-title {
-  font-size: 72rpx;
+  font-size: 76rpx;
   font-weight: 900;
-  color: #FF6B35;
-  letter-spacing: 4rpx;
+  color: #E25C30;
+  letter-spacing: 6rpx;
+  text-shadow: 0 4rpx 16rpx rgba(226, 92, 48, 0.15);
 }
 
 .brand-subtitle {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #7A6A65;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 2rpx;
 }
 
 .mascot-area {
@@ -331,30 +352,44 @@ async function handleRegister() {
   display: flex;
   flex-direction: column;
   align-items: center;
+  animation: mascotBreath 4s ease-in-out infinite;
 }
 .mascot-emoji {
-  font-size: 80rpx;
+  font-size: 88rpx;
 }
 .burp-bubble {
   position: absolute;
   top: -60rpx;
-  background: #FFFDF9;
-  color: #FF6B35;
-  font-size: 24rpx;
-  font-weight: 700;
+  background: rgba(255, 253, 249, 0.95);
+  color: #E25C30;
+  font-size: 22rpx;
+  font-weight: 800;
   padding: 10rpx 24rpx;
   border-radius: 20rpx;
   border: 2rpx solid #FFD0B9;
   white-space: nowrap;
+  backdrop-filter: blur(8rpx);
+  box-shadow: 0 4rpx 16rpx rgba(226, 92, 48, 0.1);
+}
+
+@keyframes mascotBreath {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-6rpx) scale(1.015); }
 }
 
 .login-card {
   width: 100%;
-  background: rgba(255,255,255,0.92);
-  border-radius: 40rpx;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(28rpx) saturate(190%);
+  border-radius: 48rpx;
   padding: 48rpx 40rpx;
-  box-shadow: 0 8rpx 40rpx rgba(226,92,48,0.08);
-  border: 1rpx solid rgba(226,92,48,0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 4rpx 10rpx rgba(121, 67, 49, 0.02),
+    0 24rpx 64rpx -20rpx rgba(181, 77, 41, 0.14),
+    0 12rpx 32rpx -12rpx rgba(89, 44, 30, 0.08),
+    inset 0 1rpx 2rpx rgba(255, 255, 255, 0.95),
+    inset 0 -2rpx 4rpx rgba(226, 95, 52, 0.04);
 }
 
 .card-header {
@@ -375,37 +410,43 @@ async function handleRegister() {
 }
 
 .card-title {
-  font-size: 40rpx;
+  font-size: 38rpx;
   font-weight: 900;
   color: #2D3436;
   display: block;
   margin-bottom: 8rpx;
 }
 .card-subtitle {
-  font-size: 24rpx;
-  color: #94A3B8;
+  font-size: 22rpx;
+  color: #8C7B76;
   display: block;
   margin-bottom: 32rpx;
+  font-weight: 500;
 }
 
 .role-tabs {
   display: flex;
-  gap: 16rpx;
+  gap: 12rpx;
   margin-bottom: 32rpx;
+  background: rgba(245, 245, 245, 0.6);
+  border: 1rpx solid rgba(0,0,0,0.05);
+  border-radius: 24rpx;
+  padding: 8rpx;
 }
 .role-tab {
   flex: 1;
   padding: 16rpx;
-  border-radius: 16rpx;
-  border: 2rpx solid #E2E8F0;
+  border-radius: 20rpx;
   text-align: center;
   font-size: 24rpx;
-  font-weight: 600;
+  font-weight: 700;
   color: #94A3B8;
+  transition: all 0.2s;
   &.active {
-    border-color: #FF6B35;
-    background: #FFF3EF;
-    color: #FF6B35;
+    background: white;
+    color: #E25C30;
+    box-shadow: 0 2rpx 12rpx rgba(226, 92, 48, 0.08);
+    font-weight: 800;
   }
 }
 
@@ -413,24 +454,34 @@ async function handleRegister() {
   margin-bottom: 24rpx;
 }
 .form-label {
-  font-size: 24rpx;
-  font-weight: 700;
-  color: #2D3436;
+  font-size: 20rpx;
+  font-weight: 800;
+  color: #8C7B76;
   display: block;
   margin-bottom: 10rpx;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
 }
 .form-input {
   width: 100%;
-  background: #F8FAFC;
-  border: 2rpx solid #E2E8F0;
-  border-radius: 16rpx;
-  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(4rpx);
+  border: 2rpx solid rgba(226, 218, 211, 0.75);
+  border-radius: 24rpx;
+  padding: 22rpx 28rpx;
   font-size: 28rpx;
-  color: #2D3436;
+  color: #3B2E2A;
+  font-weight: 600;
   box-sizing: border-box;
-  min-height: 72rpx;
+  min-height: 76rpx;
   position: relative;
   z-index: 2;
+  transition: all 0.2s;
+  &:focus {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #E25C30;
+    box-shadow: 0 0 0 2rpx rgba(226, 92, 48, 0.15), 0 4rpx 12rpx rgba(226, 92, 48, 0.05);
+  }
 }
 
 .password-wrap {
@@ -453,15 +504,24 @@ async function handleRegister() {
   align-items: center;
   gap: 12rpx;
   margin-bottom: 24rpx;
+  background: #FAF7F5;
+  border: 1rpx solid rgba(226, 92, 48, 0.1);
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
 }
 .quick-fill-label {
-  font-size: 22rpx;
-  color: #94A3B8;
+  font-size: 20rpx;
+  color: #A69792;
+  font-weight: 700;
 }
 .quick-fill-btn {
   font-size: 22rpx;
-  color: #FF6B35;
-  font-weight: 600;
+  color: #E25C30;
+  font-weight: 800;
+  background: #FFF5F1;
+  padding: 6rpx 14rpx;
+  border-radius: 10rpx;
+  border: 1rpx solid rgba(226, 92, 48, 0.1);
 }
 .quick-fill-sep {
   font-size: 22rpx;
@@ -470,22 +530,27 @@ async function handleRegister() {
 
 .agreement-row {
   display: flex;
-  align-items: center;
-  gap: 12rpx;
+  align-items: flex-start;
+  gap: 14rpx;
   margin-bottom: 24rpx;
+  background: #FAF7F5;
+  border: 1rpx solid rgba(226, 92, 48, 0.1);
+  padding: 20rpx;
+  border-radius: 24rpx;
 }
 .checkbox {
   width: 36rpx;
   height: 36rpx;
   border-radius: 8rpx;
-  border: 2rpx solid #E2E8F0;
+  border: 2rpx solid rgba(226, 92, 48, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 2rpx;
   &.checked {
-    background: #FF6B35;
-    border-color: #FF6B35;
+    background: #E25C30;
+    border-color: #E25C30;
   }
 }
 .check-icon {
@@ -494,41 +559,57 @@ async function handleRegister() {
   font-weight: 900;
 }
 .agreement-text {
-  font-size: 22rpx;
-  color: #7A8B8B;
-  line-height: 1.5;
+  font-size: 20rpx;
+  color: #7A6A65;
+  line-height: 1.6;
+  font-weight: 500;
 }
 
 .error-msg {
   display: block;
-  font-size: 22rpx;
-  color: #EF4444;
+  font-size: 20rpx;
+  color: #DC2626;
   margin-bottom: 16rpx;
-  font-weight: 600;
+  font-weight: 700;
+  background: rgba(254, 242, 242, 0.7);
+  border: 1rpx solid rgba(220, 38, 38, 0.15);
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
 }
 .success-msg {
   display: block;
-  font-size: 22rpx;
-  color: #10B981;
+  font-size: 20rpx;
+  color: #059669;
   margin-bottom: 16rpx;
-  font-weight: 600;
+  font-weight: 700;
+  background: rgba(236, 253, 245, 0.7);
+  border: 1rpx solid rgba(5, 150, 105, 0.15);
+  padding: 16rpx 20rpx;
+  border-radius: 20rpx;
 }
 
 .btn-primary {
   width: 100%;
-  background: #FF6B35;
+  background: linear-gradient(135deg, #E25C30, #EC784F);
   color: white;
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: 28rpx;
+  font-weight: 800;
   padding: 28rpx;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   border: none;
   margin-bottom: 24rpx;
+  box-shadow: 0 10rpx 24rpx -8rpx rgba(226, 92, 48, 0.30);
+  transition: all 0.2s;
   &.loading {
     opacity: 0.7;
+    background: #D1D5DB;
+    box-shadow: none;
   }
   &[disabled] {
     opacity: 0.7;
+  }
+  &:active {
+    transform: scale(0.98);
   }
 }
 
@@ -540,13 +621,14 @@ async function handleRegister() {
   margin-bottom: 8rpx;
 }
 .register-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #94A3B8;
+  font-weight: 500;
 }
 .register-btn {
-  font-size: 24rpx;
-  color: #FF6B35;
-  font-weight: 700;
+  font-size: 22rpx;
+  color: #E25C30;
+  font-weight: 800;
 }
 
 .sandbox-section {
@@ -562,31 +644,34 @@ async function handleRegister() {
   background: #EFE3DB;
 }
 .sandbox-label {
-  font-size: 20rpx;
+  font-size: 18rpx;
   color: #A69792;
-  font-weight: 700;
-  letter-spacing: 2rpx;
+  font-weight: 800;
+  letter-spacing: 3rpx;
   text-transform: uppercase;
 }
 .btn-sandbox {
   width: 100%;
   background: white;
   border: 2rpx solid #EFE3DB;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 20rpx;
   font-size: 22rpx;
   color: #7A6A65;
   font-weight: 700;
+  transition: all 0.2s;
   &.active {
     background: #3C2F2B;
     color: white;
     border-color: #3C2F2B;
+    box-shadow: 0 4rpx 12rpx rgba(60, 47, 43, 0.22);
   }
 }
 .sandbox-hint {
-  font-size: 20rpx;
+  font-size: 18rpx;
   color: #A69792;
   text-align: center;
   line-height: 1.6;
+  font-weight: 500;
 }
 </style>

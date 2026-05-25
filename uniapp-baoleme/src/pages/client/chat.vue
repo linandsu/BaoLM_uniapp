@@ -202,12 +202,22 @@ onUnmounted(() => {
 }
 
 .chat-header {
-  background: linear-gradient(135deg, #FF6B35, #FF926B);
+  background: linear-gradient(135deg, #E25C30 0%, #EC784F 50%, #EFA888 100%);
   padding: calc(env(safe-area-inset-top, 40rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40rpx; right: -40rpx;
+    width: 200rpx; height: 200rpx;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+  }
 }
 
 .back-btn {
@@ -218,17 +228,18 @@ onUnmounted(() => {
 }
 
 .header-info { flex: 1; }
-.header-title { color: white; font-size: 32rpx; font-weight: 800; display: block; }
-.header-subtitle { color: rgba(255,255,255,0.8); font-size: 22rpx; display: block; }
+.header-title { color: white; font-size: 30rpx; font-weight: 900; display: block; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1); }
+.header-subtitle { color: rgba(255,255,255,0.8); font-size: 20rpx; display: block; font-weight: 500; }
 
 .switch-human-btn {
   background: rgba(255,255,255,0.2);
   border: 1rpx solid rgba(255,255,255,0.4);
-  border-radius: 20rpx;
-  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+  padding: 10rpx 24rpx;
   color: white;
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: 22rpx;
+  font-weight: 800;
+  backdrop-filter: blur(8rpx);
 }
 
 .mode-badge.human {
@@ -272,13 +283,16 @@ onUnmounted(() => {
 .msg-bubble {
   max-width: 70%;
   background: white;
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 20rpx 24rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
+  border: 1rpx solid rgba(0,0,0,0.03);
 }
 
 .role-user .msg-bubble {
-  background: #FF6B35;
+  background: linear-gradient(135deg, #E25C30, #EC784F);
+  border: none;
+  box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.2);
 }
 
 .msg-content {
@@ -322,31 +336,39 @@ onUnmounted(() => {
 
 .input-bar {
   background: white;
-  border-top: 1rpx solid #E2E8F0;
+  border-top: 1rpx solid #F1F5F9;
   padding: 16rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom, 0px));
   display: flex;
   gap: 16rpx;
   align-items: center;
   flex-shrink: 0;
+  box-shadow: 0 -2rpx 12rpx rgba(0,0,0,0.03);
 }
 
 .msg-input {
   flex: 1;
-  background: #F8FAFC;
-  border: 1rpx solid #E2E8F0;
+  background: #FCFAF9;
+  border: 1rpx solid rgba(0,0,0,0.06);
   border-radius: 40rpx;
   padding: 16rpx 24rpx;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #2D3436;
+  font-weight: 600;
+  &:focus {
+    background: white;
+    border-color: #E25C30;
+    box-shadow: 0 0 0 2rpx rgba(226, 92, 48, 0.1);
+  }
 }
 
 .send-btn {
-  background: #FF6B35;
+  background: linear-gradient(135deg, #E25C30, #EC784F);
   border-radius: 40rpx;
   padding: 16rpx 32rpx;
   color: white;
-  font-size: 28rpx;
-  font-weight: 700;
+  font-size: 26rpx;
+  font-weight: 800;
+  box-shadow: 0 4rpx 12rpx rgba(226, 92, 48, 0.2);
 }
 </style>

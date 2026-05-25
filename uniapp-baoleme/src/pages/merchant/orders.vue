@@ -163,8 +163,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   gap: 8rpx;
 }
 
-.filter-tab.active { color: #FF6B35; border-bottom: 4rpx solid #FF6B35; font-weight: 700; }
-.tab-count { background: #FF6B35; color: white; border-radius: 20rpx; padding: 2rpx 10rpx; font-size: 20rpx; }
+.filter-tab.active { color: #E25C30; border-bottom: 4rpx solid #E25C30; font-weight: 800; }
+.tab-count { background: #E25C30; color: white; border-radius: 28rpx; padding: 2rpx 10rpx; font-size: 20rpx; }
 
 .orders-list { flex: 1; padding: 24rpx; }
 
@@ -172,7 +172,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .order-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   padding: 28rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
@@ -188,10 +188,10 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .order-id { font-size: 24rpx; color: #94A3B8; font-weight: 600; }
 .order-time { font-size: 22rpx; color: #94A3B8; flex: 1; }
-.order-status { font-size: 22rpx; font-weight: 700; padding: 4rpx 12rpx; border-radius: 12rpx; }
+.order-status { font-size: 22rpx; font-weight: 800; padding: 4rpx 12rpx; border-radius: 12rpx; }
 .status-pending { background: #FFF3CD; color: #856404; }
 .status-accepted { background: #D1ECF1; color: #0C5460; }
-.status-cooking { background: #FFE5D0; color: #FF6B35; }
+.status-cooking { background: #FFE5D0; color: #E25C30; }
 .status-delivering { background: #D4EDDA; color: #155724; }
 .status-completed { background: #E8F5E9; color: #2E7D32; }
 .status-cancelled { background: #F8D7DA; color: #721C24; }
@@ -199,17 +199,17 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .order-items { margin-bottom: 16rpx; }
 .order-item { display: flex; justify-content: space-between; padding: 8rpx 0; border-bottom: 1rpx solid #F1F5F9; }
 .item-name { font-size: 26rpx; color: #2D3436; }
-.item-price { font-size: 26rpx; color: #FF6B35; font-weight: 600; }
+.item-price { font-size: 26rpx; color: #E25C30; font-weight: 600; }
 
 .order-info { margin-bottom: 16rpx; }
 .info-row { font-size: 24rpx; color: #64748B; display: block; margin-bottom: 6rpx; }
 
 .order-footer { display: flex; justify-content: space-between; align-items: center; }
-.order-total { font-size: 32rpx; font-weight: 800; color: #FF6B35; }
+.order-total { font-size: 32rpx; font-weight: 800; color: #E25C30; }
 
 .action-btns { display: flex; gap: 12rpx; flex-wrap: wrap; }
-.btn-action { font-size: 24rpx; font-weight: 700; padding: 12rpx 24rpx; border-radius: 16rpx; border: none; }
-.btn-accept { background: #FF6B35; color: white; }
+.btn-action { font-size: 24rpx; font-weight: 800; padding: 12rpx 24rpx; border-radius: 16rpx; border: none; }
+.btn-accept { background: #E25C30; color: white; }
 .btn-cook { background: #F59E0B; color: white; }
 .btn-deliver { background: #10B981; color: white; }
 .btn-complete { background: #3B82F6; color: white; }

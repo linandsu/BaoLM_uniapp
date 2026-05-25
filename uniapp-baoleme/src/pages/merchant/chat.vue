@@ -213,12 +213,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .back-btn { color: white; font-size: 40rpx; font-weight: bold; }
 .header-title { color: white; font-size: 36rpx; font-weight: 800; flex: 1; }
 .header-badge {
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 22rpx;
   padding: 6rpx 16rpx;
-  border-radius: 20rpx;
-  font-weight: 700;
+  border-radius: 28rpx;
+  font-weight: 800;
 }
 
 .chat-layout {
@@ -237,7 +237,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .list-title {
   font-size: 22rpx;
   color: #94A3B8;
-  font-weight: 700;
+  font-weight: 800;
   padding: 8rpx 24rpx 16rpx;
   display: block;
   text-transform: uppercase;
@@ -253,13 +253,13 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   cursor: pointer;
 
   &.active { background: #FFF3EF; }
-  &.human { border-left: 4rpx solid #FF6B35; }
+  &.human { border-left: 4rpx solid #E25C30; }
 }
 
 .session-avatar {
   width: 64rpx;
   height: 64rpx;
-  background: #FF6B35;
+  background: #E25C30;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -276,7 +276,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   font-size: 20rpx;
   display: block;
   margin-top: 4rpx;
-  &.human { color: #FF6B35; }
+  &.human { color: #E25C30; }
   &.bot { color: #94A3B8; }
 }
 
@@ -309,17 +309,17 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   justify-content: space-between;
 }
 
-.chat-user-name { font-size: 28rpx; font-weight: 700; color: #2D3436; }
+.chat-user-name { font-size: 28rpx; font-weight: 800; color: #2D3436; }
 
 .toolbar-actions { display: flex; gap: 16rpx; }
 
 .takeover-btn {
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 24rpx;
   padding: 8rpx 24rpx;
-  border-radius: 20rpx;
-  font-weight: 700;
+  border-radius: 28rpx;
+  font-weight: 800;
 }
 
 .resolve-btn {
@@ -327,8 +327,8 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   color: #64748B;
   font-size: 24rpx;
   padding: 8rpx 24rpx;
-  border-radius: 20rpx;
-  font-weight: 700;
+  border-radius: 28rpx;
+  font-weight: 800;
 }
 
 .chat-messages {
@@ -355,7 +355,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .message-row.user .msg-bubble { background: white; }
 .message-row.assistant .msg-bubble { background: #FFF3EF; }
-.message-row.merchant .msg-bubble { background: #FF6B35; color: white; }
+.message-row.merchant .msg-bubble { background: #E25C30; color: white; }
 
 .msg-role-label {
   font-size: 20rpx;
@@ -390,12 +390,12 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 }
 
 .send-btn {
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 28rpx;
   padding: 16rpx 32rpx;
   border-radius: 40rpx;
-  font-weight: 700;
+  font-weight: 800;
   border: none;
 }
 

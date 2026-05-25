@@ -156,7 +156,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   color: white;
   font-size: 24rpx;
   padding: 8rpx 24rpx;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
 }
 
 .bottom-tabs {
@@ -181,7 +181,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 }
 
 .tab-item.active .tab-icon,
-.tab-item.active .tab-label { color: #FF6B35; }
+.tab-item.active .tab-label { color: #E25C30; }
 
 .tab-icon { font-size: 36rpx; }
 .tab-label { font-size: 20rpx; color: #94A3B8; }
@@ -197,20 +197,20 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .stat-card {
   background: white;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   padding: 32rpx;
   text-align: center;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
 }
 
-.stat-card.highlight { background: linear-gradient(135deg, #FF6B35, #FF926B); }
+.stat-card.highlight { background: linear-gradient(135deg, #E25C30, #EC784F); }
 .stat-card.highlight .stat-value,
 .stat-card.highlight .stat-label { color: white; }
 
 .stat-value { font-size: 48rpx; font-weight: 800; color: #2D3436; display: block; }
 .stat-label { font-size: 24rpx; color: #94A3B8; margin-top: 8rpx; display: block; }
 
-.section { background: white; border-radius: 20rpx; padding: 32rpx; margin-bottom: 24rpx; }
+.section { background: white; border-radius: 28rpx; padding: 32rpx; margin-bottom: 24rpx; }
 .section-title { font-size: 30rpx; font-weight: 800; color: #2D3436; display: block; margin-bottom: 24rpx; }
 
 .top-dish-item {
@@ -224,7 +224,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .rank-badge {
   width: 48rpx;
   height: 48rpx;
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   border-radius: 50%;
   display: flex;
@@ -238,7 +238,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .dish-info { flex: 1; }
 .dish-name { font-size: 28rpx; font-weight: 600; color: #2D3436; display: block; }
 .dish-sales { font-size: 22rpx; color: #94A3B8; }
-.dish-price { font-size: 28rpx; font-weight: 700; color: #FF6B35; }
+.dish-price { font-size: 28rpx; font-weight: 800; color: #E25C30; }
 
 .recent-order-item {
   display: flex;
@@ -251,11 +251,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .order-id { font-size: 24rpx; color: #94A3B8; font-weight: 600; display: block; }
 .order-items-text { font-size: 26rpx; color: #2D3436; margin-top: 4rpx; display: block; }
 .order-right { text-align: right; }
-.order-price { font-size: 28rpx; font-weight: 700; color: #FF6B35; display: block; }
+.order-price { font-size: 28rpx; font-weight: 800; color: #E25C30; display: block; }
 .order-status { font-size: 22rpx; margin-top: 4rpx; display: block; }
 .status-pending { color: #856404; }
 .status-accepted { color: #0C5460; }
-.status-cooking { color: #FF6B35; }
+.status-cooking { color: #E25C30; }
 .status-delivering { color: #155724; }
 .status-completed { color: #2E7D32; }
 .status-cancelled { color: #721C24; }

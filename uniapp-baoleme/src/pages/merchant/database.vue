@@ -83,10 +83,10 @@ function copyDDL() {
 }
 
 .copy-btn {
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 24rpx;
-  font-weight: 700;
+  font-weight: 800;
   padding: 12rpx 28rpx;
   border-radius: 16rpx;
   border: none;

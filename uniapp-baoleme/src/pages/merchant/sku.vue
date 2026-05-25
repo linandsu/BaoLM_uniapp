@@ -234,18 +234,18 @@ onMounted(fetchData);
 .search-input {
   flex: 1;
   background: #F1F5F9;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   padding: 16rpx 24rpx;
   font-size: 28rpx;
 }
 
 .btn-add {
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 26rpx;
-  font-weight: 700;
+  font-weight: 800;
   padding: 0 28rpx;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   white-space: nowrap;
 }
 
@@ -259,7 +259,7 @@ onMounted(fetchData);
 .cat-chip {
   display: inline-block;
   padding: 10rpx 24rpx;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   font-size: 26rpx;
   font-weight: 600;
   color: #64748B;
@@ -267,7 +267,7 @@ onMounted(fetchData);
   margin-right: 12rpx;
 
   &.active {
-    background: #FF6B35;
+    background: #E25C30;
     color: white;
   }
 }
@@ -278,7 +278,7 @@ onMounted(fetchData);
   display: flex;
   gap: 20rpx;
   background: white;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.05);
@@ -293,7 +293,7 @@ onMounted(fetchData);
 }
 
 .dish-info { flex: 1; }
-.dish-name { font-size: 30rpx; font-weight: 700; color: #2D3436; display: block; }
+.dish-name { font-size: 30rpx; font-weight: 800; color: #2D3436; display: block; }
 .dish-cat { font-size: 22rpx; color: #94A3B8; display: block; margin-top: 4rpx; }
 
 .dish-meta {
@@ -302,7 +302,7 @@ onMounted(fetchData);
   margin-top: 8rpx;
 }
 
-.dish-price { font-size: 28rpx; font-weight: 800; color: #FF6B35; }
+.dish-price { font-size: 28rpx; font-weight: 800; color: #E25C30; }
 .dish-stock, .dish-sales { font-size: 22rpx; color: #94A3B8; }
 
 .dish-actions {
@@ -314,7 +314,7 @@ onMounted(fetchData);
 
 .toggle-btn {
   font-size: 22rpx;
-  font-weight: 700;
+  font-weight: 800;
   padding: 8rpx 16rpx;
   border-radius: 12rpx;
 
@@ -369,7 +369,7 @@ onMounted(fetchData);
 .modal-body { padding: 24rpx 32rpx; }
 
 .form-group { margin-bottom: 24rpx; }
-.form-label { font-size: 26rpx; font-weight: 700; color: #475569; display: block; margin-bottom: 8rpx; }
+.form-label { font-size: 26rpx; font-weight: 800; color: #475569; display: block; margin-bottom: 8rpx; }
 
 .form-input {
   width: 100%;
@@ -404,12 +404,12 @@ onMounted(fetchData);
 
 .btn-submit {
   width: 100%;
-  background: #FF6B35;
+  background: #E25C30;
   color: white;
   font-size: 30rpx;
   font-weight: 800;
   padding: 28rpx 0;
-  border-radius: 20rpx;
+  border-radius: 28rpx;
   margin-top: 16rpx;
 }
 </style>
