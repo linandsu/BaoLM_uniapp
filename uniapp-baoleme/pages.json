@@ -1,0 +1,84 @@
+{
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "饱了么 · 登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/client/home",
+      "style": {
+        "navigationBarTitleText": "饱了么 · 点外卖",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/client/orders",
+      "style": {
+        "navigationBarTitleText": "我的订单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/client/chat",
+      "style": {
+        "navigationBarTitleText": "客服中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant/analytics",
+      "style": {
+        "navigationBarTitleText": "掌柜后台 · 概览",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant/orders",
+      "style": {
+        "navigationBarTitleText": "订单管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant/sku",
+      "style": {
+        "navigationBarTitleText": "菜品管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant/chat",
+      "style": {
+        "navigationBarTitleText": "客服工作台",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant/database",
+      "style": {
+        "navigationBarTitleText": "数据库 DDL",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "tabBar": {
+    "custom": false,
+    "color": "#94A3B8",
+    "selectedColor": "#FF6B35",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": []
+  },
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "饱了么",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FCFAF9",
+    "app-plus": {
+      "background": "#FCFAF9"
+    }
+  }
+}

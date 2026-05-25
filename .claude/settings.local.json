@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"d:/BaoLM/uniapp-baoleme/src\")"
+    ],
+    "additionalDirectories": [
+      "d:\\BaoLM\\uniapp-baoleme"
+    ]
+  }
+}
