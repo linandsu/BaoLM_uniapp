@@ -2,7 +2,7 @@
   <view class="orders-page">
     <!-- 顶部导航 -->
     <view class="page-header">
-      <text class="back-btn" @tap="uni.navigateBack()">←</text>
+      <text class="back-btn" @tap="goBack">←</text>
       <text class="page-title">我的订单</text>
     </view>
 
@@ -124,6 +124,10 @@ onMounted(() => {
   pollTimer = setInterval(fetchOrders, 2500);
 });
 
+function goBack() {
+  uni.navigateBack();
+}
+
 onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer);
 });
@@ -131,7 +135,7 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .orders-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #FCFAF9;
   display: flex;
   flex-direction: column;

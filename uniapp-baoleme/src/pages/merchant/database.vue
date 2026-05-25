@@ -40,7 +40,7 @@ function copyDDL() {
 
 <style lang="scss" scoped>
 .merchant-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #1E293B;
   display: flex;
   flex-direction: column;
@@ -48,7 +48,7 @@ function copyDDL() {
 
 .merchant-header {
   background: #0F172A;
-  padding: 60rpx 32rpx 24rpx;
+  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;

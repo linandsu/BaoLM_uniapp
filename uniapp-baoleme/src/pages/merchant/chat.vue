@@ -196,7 +196,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 <style lang="scss" scoped>
 .merchant-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #F8FAFC;
   display: flex;
   flex-direction: column;
@@ -204,7 +204,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 
 .merchant-header {
   background: linear-gradient(135deg, #2D3436, #636E72);
-  padding: 60rpx 32rpx 24rpx;
+  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;

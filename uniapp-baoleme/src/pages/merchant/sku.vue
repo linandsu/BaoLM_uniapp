@@ -56,8 +56,8 @@
     </scroll-view>
 
     <!-- 新增菜品弹窗 -->
-    <view v-if="showAddModal" class="modal-overlay" @tap.self="showAddModal = false">
-      <view class="modal-panel">
+    <view v-if="showAddModal" class="modal-overlay" @tap="showAddModal = false">
+      <view class="modal-panel" @tap.stop>
         <view class="modal-header">
           <text class="modal-title">新增菜品</text>
           <text class="modal-close" @tap="showAddModal = false">×</text>
@@ -206,7 +206,7 @@ onMounted(fetchData);
 
 <style lang="scss" scoped>
 .merchant-page {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #F8FAFC;
   display: flex;
   flex-direction: column;
@@ -214,7 +214,7 @@ onMounted(fetchData);
 
 .merchant-header {
   background: linear-gradient(135deg, #2D3436, #636E72);
-  padding: 60rpx 32rpx 24rpx;
+  padding: calc(env(safe-area-inset-top, 50rpx) + 20rpx) 32rpx 24rpx;
   display: flex;
   align-items: center;
   gap: 16rpx;
@@ -339,7 +339,10 @@ onMounted(fetchData);
 
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0,0,0,0.5);
   z-index: 200;
   display: flex;

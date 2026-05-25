@@ -19,3 +19,16 @@ onShow(() => {
     <router-view v-if="false" />
   </view>
 </template>
+
+<style>
+page {
+  width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+view, scroll-view, text, input, textarea, button, image {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+</style>

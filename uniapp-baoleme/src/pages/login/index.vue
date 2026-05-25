@@ -140,6 +140,34 @@
         </view>
       </view>
     </view>
+
+    <!-- 设置按钮（左上角） -->
+    <view class="settings-btn" @tap="showSettings = true">
+      <text>⚙️</text>
+    </view>
+
+    <!-- 设置弹窗 -->
+    <view v-if="showSettings" class="settings-overlay" @tap="showSettings = false">
+      <view class="settings-panel" @tap.stop>
+        <text class="settings-title">后端连接设置</text>
+        <text class="settings-desc">当前连接地址：</text>
+        <input
+          class="settings-input"
+          v-model="backendUrl"
+          placeholder="http://192.168.1.10:8081"
+          :focus="showSettings"
+        />
+        <view class="settings-actions">
+          <view class="settings-btn-cancel" @tap="showSettings = false">
+            <text>取消</text>
+          </view>
+          <view class="settings-btn-save" @tap="saveBackendUrl">
+            <text>保存</text>
+          </view>
+        </view>
+        <text class="settings-hint">提示：修改后需要重新登录生效</text>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -147,6 +175,19 @@
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { loginApi, registerApi } from '../../api/auth';
+import { getBaseUrl, setBaseUrl } from '../../api/config';
+
+const showSettings = ref(false);
+const backendUrl = ref(getBaseUrl());
+
+function saveBackendUrl() {
+  const url = backendUrl.value.trim();
+  if (url) {
+    setBaseUrl(url);
+    uni.showToast({ title: '已保存', icon: 'success' });
+    showSettings.value = false;
+  }
+}
 
 const authStore = useAuthStore();
 
@@ -253,8 +294,10 @@ async function handleRegister() {
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
-  padding: 40rpx;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
 }
 
 .bg-orb {
@@ -299,12 +342,12 @@ async function handleRegister() {
 }
 
 .login-container {
-  width: 100%;
+  width: 90%;
   max-width: 680rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24rpx;
+  gap: 3vh;
   position: relative;
   z-index: 1;
 }
@@ -333,7 +376,7 @@ async function handleRegister() {
 }
 
 .brand-title {
-  font-size: 76rpx;
+  font-size: 12vw;
   font-weight: 900;
   color: #E25C30;
   letter-spacing: 6rpx;
@@ -355,7 +398,7 @@ async function handleRegister() {
   animation: mascotBreath 4s ease-in-out infinite;
 }
 .mascot-emoji {
-  font-size: 88rpx;
+  font-size: 14vw;
 }
 .burp-bubble {
   position: absolute;
@@ -381,8 +424,8 @@ async function handleRegister() {
   width: 100%;
   background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(28rpx) saturate(190%);
-  border-radius: 48rpx;
-  padding: 48rpx 40rpx;
+  border-radius: 8vw;
+  padding: 6vw 5vw;
   border: 2rpx solid rgba(255, 255, 255, 0.85);
   box-shadow:
     0 4rpx 10rpx rgba(121, 67, 49, 0.02),
@@ -673,5 +716,110 @@ async function handleRegister() {
   text-align: center;
   line-height: 1.6;
   font-weight: 500;
+}
+
+.settings-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 20rpx) + 16rpx);
+  right: 4vw;
+  width: 9vw;
+  height: 9vw;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(8rpx);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5vw;
+  z-index: 10;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10vw;
+}
+
+.settings-panel {
+  background: white;
+  border-radius: 6vw;
+  padding: 6vw;
+  width: 100%;
+  max-width: 600rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 1000;
+}
+
+.settings-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #2D3436;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.settings-desc {
+  font-size: 22rpx;
+  color: #8C7B76;
+  display: block;
+  margin-bottom: 12rpx;
+}
+
+.settings-input {
+  width: 100%;
+  background: #FCFAF9;
+  border: 2rpx solid rgba(226, 218, 211, 0.75);
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  font-size: 26rpx;
+  color: #3B2E2A;
+  font-weight: 600;
+  box-sizing: border-box;
+  margin-bottom: 24rpx;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.settings-btn-cancel {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 20rpx;
+  background: #F1F5F9;
+  color: #7A8B8B;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.settings-btn-save {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #E25C30, #EC784F);
+  color: white;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.settings-hint {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 20rpx;
+  color: #A69792;
+  text-align: center;
 }
 </style>

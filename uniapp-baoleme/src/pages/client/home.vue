@@ -6,6 +6,7 @@
         <text class="location-icon">📍</text>
         <text class="location-text">{{ address }}</text>
         <text class="shop-badge">自营店</text>
+        <text class="logout-btn" @tap="handleLogout">退出</text>
       </view>
 
       <!-- 用户画像切换 -->
@@ -358,11 +359,16 @@ function goToOrders() {
 function goToChat() {
   uni.navigateTo({ url: '/pages/client/chat' });
 }
+
+function handleLogout() {
+  authStore.logout();
+  uni.reLaunch({ url: '/pages/login/index' });
+}
 </script>
 
 <style lang="scss">
 .client-home {
-  min-height: 100vh;
+  min-height: 100vh; min-height: 100dvh;
   background: #FCFAF9;
   padding-bottom: 120rpx;
 }
@@ -399,6 +405,14 @@ function goToChat() {
   border-radius: 20rpx;
   font-size: 18rpx;
   font-weight: 700;
+}
+.logout-btn {
+  background: rgba(255,255,255,0.2);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
 }
 
 .profile-row {
@@ -657,7 +671,10 @@ function goToChat() {
 
 .cart-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0,0,0,0.55);
   z-index: 200;
   display: flex;
