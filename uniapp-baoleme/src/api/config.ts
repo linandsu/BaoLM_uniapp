@@ -16,6 +16,36 @@ export function setBaseUrl(url: string) {
 
 export const API_PREFIX = '/api';
 
+/** multipart 上传（菜品图等），返回可写入 image 字段的 URL */
+export function uploadFileRequest(
+  apiPath: string,
+  filePath: string,
+  fieldName = 'file'
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const token = uni.getStorageSync('baoleme_token');
+    uni.uploadFile({
+      url: getBaseUrl() + API_PREFIX + apiPath,
+      filePath,
+      name: fieldName,
+      header: token ? { Authorization: `Bearer ${token}` } : {},
+      success: (res) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            const body = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+            resolve(body);
+          } catch {
+            resolve(res.data);
+          }
+        } else {
+          reject({ statusCode: res.statusCode, data: res.data });
+        }
+      },
+      fail: (err) => reject(err),
+    });
+  });
+}
+
 export function request<T = any>(options: {
   url: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';

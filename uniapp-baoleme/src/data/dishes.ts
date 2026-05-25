@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS \`tb_dish\` (
   \`name\` VARCHAR(100) NOT NULL COMMENT '菜品名称',
   \`price\` DECIMAL(10, 2) NOT NULL COMMENT '菜品单价',
   \`description\` TEXT COMMENT '菜品描述',
-  \`image_url\` VARCHAR(255) DEFAULT NULL COMMENT '菜品效果图URL',
+  \`image_url\` VARCHAR(255) DEFAULT NULL COMMENT '菜品图HTTP地址(须<=255字符，勿存Base64；大图请走上传接口)',
   \`category_id\` INT NOT NULL COMMENT '所属分类ID (外键关联 tb_category)',
   \`stock\` INT DEFAULT 99 COMMENT '库存剩余',
   \`sales\` INT DEFAULT 0 COMMENT '月销量统计',

@@ -93,8 +93,7 @@ export function resolveDishImage(dishId: string, remoteOrPath?: string): string 
 
 const MAX_DISH_IMAGE_BASE64 = 320000;
 
-function readPathAsDataUrl(filePath: string): Promise<string> {
-  if (isDataImage(filePath)) return Promise.resolve(filePath);
+function readPathAsDataUrlFsm(filePath: string): Promise<string> {
   return new Promise((resolve, reject) => {
     uni.getFileSystemManager().readFile({
       filePath,
@@ -108,7 +107,43 @@ function readPathAsDataUrl(filePath: string): Promise<string> {
   });
 }
 
-function compressImagePath(src: string, quality: number): Promise<string> {
+function readPathAsDataUrlPlus(filePath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const normalized = filePath.startsWith('file://') ? filePath : filePath;
+    // @ts-expect-error App-PLUS 运行时
+    plus.io.resolveLocalFileSystemURL(
+      normalized,
+      (entry: any) => {
+        entry.file(
+          (file: any) => {
+            // @ts-expect-error App-PLUS 运行时
+            const reader = new plus.io.FileReader();
+            reader.onloadend = (e: any) => {
+              const result = e?.target?.result;
+              if (typeof result === 'string') resolve(result);
+              else reject(new Error('读取图片失败'));
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          },
+          reject
+        );
+      },
+      () => readPathAsDataUrlFsm(filePath).then(resolve).catch(reject)
+    );
+  });
+}
+
+function readPathAsDataUrl(filePath: string): Promise<string> {
+  if (isDataImage(filePath)) return Promise.resolve(filePath);
+  // @ts-expect-error App-PLUS
+  if (typeof plus !== 'undefined' && plus.io) {
+    return readPathAsDataUrlPlus(filePath);
+  }
+  return readPathAsDataUrlFsm(filePath);
+}
+
+export function compressImagePath(src: string, quality: number): Promise<string> {
   return new Promise((resolve) => {
     uni.compressImage({
       src,

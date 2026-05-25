@@ -8,7 +8,7 @@
     <!-- 搜索栏 -->
     <view class="search-bar">
       <input class="search-input" v-model="searchQuery" placeholder="搜索菜品名称..." />
-      <view class="btn-add tap-target" @tap="showAddModal = true">+ 新增菜品</view>
+      <view class="btn-add tap-target" @tap="openAddModal">+ 新增菜品</view>
     </view>
 
     <!-- 分类筛选 -->
@@ -48,12 +48,13 @@
           </view>
         </view>
         <view class="dish-actions">
+          <text class="edit-btn tap-target" @tap="openEditModal(dish)">编辑</text>
           <text
             class="toggle-btn"
             :class="dish.status === 'active' ? 'active' : 'inactive'"
             @tap="toggleDishStatus(dish)"
           >{{ dish.status === 'active' ? '下架' : '上架' }}</text>
-          <text class="delete-btn" @tap="deleteDish(dish.id)">删除</text>
+          <text class="delete-btn tap-target" @tap="deleteDish(dish.id)">删除</text>
         </view>
       </view>
 
@@ -62,13 +63,13 @@
       </view>
     </scroll-view>
 
-    <!-- 新增菜品弹窗 -->
-    <view v-if="showAddModal" class="modal-overlay">
-      <view class="modal-bg" @tap="showAddModal = false"></view>
+    <!-- 新增 / 编辑菜品弹窗 -->
+    <view v-if="showFormModal" class="modal-overlay">
+      <view class="modal-bg" @tap="closeFormModal"></view>
       <view class="modal-panel" @tap.stop>
         <view class="modal-header">
-          <text class="modal-title">新增菜品</text>
-          <text class="modal-close" @tap="showAddModal = false">×</text>
+          <text class="modal-title">{{ isEditMode ? '编辑菜品' : '新增菜品' }}</text>
+          <text class="modal-close tap-target" @tap="closeFormModal">×</text>
         </view>
 
         <view class="modal-body">
@@ -94,7 +95,7 @@
             <textarea class="form-textarea" v-model="form.description" placeholder="描述这道菜的特色..." />
           </view>
           <view class="form-group">
-            <text class="form-label">初始库存</text>
+            <text class="form-label">{{ isEditMode ? '库存' : '初始库存' }}</text>
             <input class="form-input" v-model="form.stock" type="number" placeholder="99" :adjust-position="true" />
           </view>
           <view class="form-group">
@@ -103,13 +104,15 @@
               <DishImage v-if="form.imagePreview" class="picker-preview" :src="form.imagePreview" />
               <view v-else class="picker-placeholder">
                 <text class="picker-icon">📷</text>
-                <text>从相册选择图片（保存到本机）</text>
+                <text>从相册选择图片</text>
               </view>
             </view>
-            <text class="picker-hint">图片将同步到服务器，顾客端各手机均可显示</text>
+            <text class="picker-hint">图片将上传至 POST /api/upload/image，成功后各端可见</text>
           </view>
 
-          <view class="btn-submit tap-target" @tap="handleAddDish">确认上架入库</view>
+          <view class="btn-submit tap-target" @tap="handleSubmitForm">
+            {{ isEditMode ? '保存修改' : '确认上架入库' }}
+          </view>
         </view>
       </view>
     </view>
@@ -118,27 +121,36 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getDishes, getCategories, addDish, deleteDish as apiDeleteDish, updateDishStatus } from '../../api/dishes';
+import {
+  getDishes,
+  getCategories,
+  addDish,
+  updateDish,
+  deleteDish as apiDeleteDish,
+  updateDishStatus,
+} from '../../api/dishes';
 import type { Dish, Category } from '../../types';
 import { goBack } from '../../utils/nav';
 import { useSafeTop } from '../../composables/useSafeTop';
 import DishImage from '../../components/DishImage.vue';
-import {
-  encodeDishImageForServer,
-  resolveDishImage,
-  setDishLocalImage,
-  DISH_PLACEHOLDER,
-} from '../../utils/localImage';
+import { resolveDishImage, setDishLocalImage } from '../../utils/localImage';
+import { prepareDishImageForSave } from '../../utils/dishImageSubmit';
+import { formatApiError } from '../../utils/apiError';
 
 const safeTopStyle = useSafeTop(12);
 
-const dishes = ref<Dish[]>([]);
+type DishRow = Dish & { imageRaw: string };
+
+const dishes = ref<DishRow[]>([]);
 const categories = ref<Category[]>([]);
 const searchQuery = ref('');
 const filterCat = ref('all');
-const showAddModal = ref(false);
+const showFormModal = ref(false);
+const editingDishId = ref<string | null>(null);
 
-const form = ref({
+const isEditMode = computed(() => !!editingDishId.value);
+
+const emptyForm = () => ({
   name: '',
   price: '',
   category: '热销推荐',
@@ -146,7 +158,10 @@ const form = ref({
   stock: '99',
   image: '',
   imagePreview: '' as string,
+  imageKeep: '' as string,
 });
+
+const form = ref(emptyForm());
 
 const catIndex = computed(() => {
   const idx = categories.value.findIndex(c => c.name === form.value.category);
@@ -172,6 +187,7 @@ async function fetchData() {
     const list = await getDishes();
     dishes.value = list.map((d) => ({
       ...d,
+      imageRaw: d.image,
       image: resolveDishImage(d.id, d.image),
     }));
     categories.value = await getCategories();
@@ -223,50 +239,110 @@ async function deleteDish(id: string) {
   });
 }
 
+function openAddModal() {
+  editingDishId.value = null;
+  form.value = emptyForm();
+  showFormModal.value = true;
+}
+
+function openEditModal(dish: DishRow) {
+  editingDishId.value = dish.id;
+  form.value = {
+    name: dish.name,
+    price: String(dish.price),
+    category: dish.category,
+    description: dish.description || '',
+    stock: String(dish.stock),
+    image: '',
+    imagePreview: dish.image,
+    imageKeep: dish.imageRaw || dish.image,
+  };
+  showFormModal.value = true;
+}
+
+function closeFormModal() {
+  showFormModal.value = false;
+  editingDishId.value = null;
+  form.value = emptyForm();
+}
+
+async function resolveImageForSubmit() {
+  uni.showLoading({ title: '处理图片...' });
+  try {
+    const result = await prepareDishImageForSave({
+      newTempPath: form.value.image || undefined,
+      imageKeep: form.value.imageKeep,
+    });
+    return result;
+  } finally {
+    uni.hideLoading();
+  }
+}
+
+function handleSubmitForm() {
+  if (isEditMode.value) {
+    handleUpdateDish();
+  } else {
+    handleAddDish();
+  }
+}
+
 async function handleAddDish() {
   if (!form.value.name || !form.value.price) {
     uni.showToast({ title: '请填写菜品名称和价格', icon: 'none' });
     return;
   }
   try {
-    const newId = 'd_' + Date.now();
-    let imagePath = DISH_PLACEHOLDER;
-    if (form.value.image && !form.value.image.startsWith('data:')) {
-      uni.showLoading({ title: '上传图片...' });
-      try {
-        imagePath = await encodeDishImageForServer(form.value.image);
-      } finally {
-        uni.hideLoading();
-      }
-    } else if (form.value.image) {
-      imagePath = form.value.image;
-    }
-    await addDish({
-      id: newId,
+    const imageResult = await resolveImageForSubmit();
+    const created = await addDish({
       name: form.value.name,
       price: parseFloat(form.value.price),
       category: form.value.category,
       description: form.value.description,
       stock: parseInt(form.value.stock) || 99,
-      image: imagePath,
+      image: imageResult.apiImage || undefined,
       sales: 0,
       status: 'active',
     });
-    setDishLocalImage(newId, imagePath);
-    showAddModal.value = false;
-    form.value = {
-      name: '',
-      price: '',
-      category: '热销推荐',
-      description: '',
-      stock: '99',
-      image: '',
-      imagePreview: '',
-    };
+    const newId = String(created.id ?? `d_${Date.now()}`);
+    if (imageResult.localCache) {
+      setDishLocalImage(newId, imageResult.localCache);
+    }
+    closeFormModal();
     await fetchData();
     uni.showToast({ title: '上架成功', icon: 'success' });
   } catch (e) {
-    uni.showToast({ title: '上架失败', icon: 'none' });
+    uni.showToast({ title: formatApiError(e, '上架失败'), icon: 'none', duration: 3000 });
+  }
+}
+
+async function handleUpdateDish() {
+  if (!editingDishId.value) return;
+  if (!form.value.name || !form.value.price) {
+    uni.showToast({ title: '请填写菜品名称和价格', icon: 'none' });
+    return;
+  }
+  try {
+    const imageResult = await resolveImageForSubmit();
+    const dish = dishes.value.find((d) => d.id === editingDishId.value);
+    await updateDish(editingDishId.value, {
+      name: form.value.name,
+      price: parseFloat(form.value.price),
+      category: form.value.category,
+      description: form.value.description,
+      stock: parseInt(form.value.stock) || 0,
+      image: imageResult.apiImage || dish?.imageRaw || undefined,
+      status: dish?.status,
+      sales: dish?.sales,
+    });
+    if (imageResult.localCache) {
+      setDishLocalImage(editingDishId.value, imageResult.localCache);
+    }
+    closeFormModal();
+    await fetchData();
+    uni.showToast({ title: '保存成功', icon: 'success' });
+  } catch (e) {
+    uni.showToast({ title: formatApiError(e, '保存失败'), icon: 'none', duration: 3000 });
   }
 }
 
@@ -459,6 +535,15 @@ onMounted(fetchData);
   gap: 12rpx;
   align-items: center;
   flex-shrink: 0;
+}
+
+.edit-btn {
+  font-size: 22rpx;
+  font-weight: 800;
+  padding: 8rpx 16rpx;
+  border-radius: 12rpx;
+  background: #fff7ed;
+  color: #c2410c;
 }
 
 .toggle-btn {

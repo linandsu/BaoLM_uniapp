@@ -1,12 +1,17 @@
 import { request } from './config';
+import { uploadImage } from './upload';
 import type { Dish, Category } from '../types';
 
 // ============================================================
 // 菜品 & 分类 API
-// 状态: 🔴 MOCK（由本地 Express server.ts 提供内存数据）
-// SSM 对接: GET /api/categories | GET /api/dishes
-//           POST /api/dishes | PUT /api/dishes/{id}
+// 图片须先 POST /api/upload/image 上传，再将返回 url 写入 dish.image
+// 详见 doc/菜品图片上传-后端对接说明.md
 // ============================================================
+
+/** 上传菜品图（封装 uploadImage） */
+export function uploadDishImage(filePath: string): Promise<string> {
+  return uploadImage(filePath, 'file');
+}
 
 /** [MOCK] 获取所有菜品分类 */
 export function getCategories(): Promise<Category[]> {

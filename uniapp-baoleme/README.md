@@ -66,6 +66,7 @@ export const BASE_URL = 'http://你的服务器IP:8080';
 | 接口 | 方法 | 路径 | 当前状态 | SSM Controller |
 |------|------|------|----------|----------------|
 | 获取分类列表 | GET | `/api/categories` | 🔴 MOCK | `CategoryController` |
+| 上传菜品图片 | POST | `/api/upload/image` | 🔴 待后端实现 | `UploadController` |
 | 获取菜品列表 | GET | `/api/dishes` | 🔴 MOCK | `DishController` |
 | 新增菜品 | POST | `/api/dishes` | 🔴 MOCK | `DishController` |
 | 更新菜品 | PUT | `/api/dishes/{id}` | 🔴 MOCK | `DishController` |
