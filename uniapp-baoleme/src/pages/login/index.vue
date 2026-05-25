@@ -146,13 +146,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '../../stores/auth';
-import { MOCK_USER_PROFILES } from '../../data/dishes';
-import type { UserProfile } from '../../types';
+import { loginApi, registerApi } from '../../api/auth';
 
 const authStore = useAuthStore();
 
-const username = ref('xiaoming');
-const password = ref('123456');
+const username = ref('');
+const password = ref('');
 const showPassword = ref(false);
 const isAgreed = ref(true);
 const isLoading = ref(false);
@@ -167,23 +166,6 @@ const regConfirmPassword = ref('');
 const successMsg = ref('');
 
 const showBurp = ref(false);
-let mascotClickCount = 0;
-
-const DEFAULT_USERS = [
-  { username: 'xiaoming', password: '123456', role: 'client' },
-  { username: 'admin', password: 'admin', role: 'merchant' }
-];
-
-function getAccounts() {
-  const stored = uni.getStorageSync('baoleme_users');
-  return stored ? JSON.parse(stored) : DEFAULT_USERS;
-}
-
-function saveAccount(u: string, p: string, r: 'client' | 'merchant') {
-  const list = getAccounts();
-  list.push({ username: u, password: p, role: r });
-  uni.setStorageSync('baoleme_users', JSON.stringify(list));
-}
 
 function fillClient() {
   username.value = 'xiaoming';
@@ -196,12 +178,11 @@ function fillMerchant() {
 }
 
 function handleMascotTap() {
-  mascotClickCount++;
   showBurp.value = true;
   setTimeout(() => { showBurp.value = false; }, 1800);
 }
 
-function handleLogin() {
+async function handleLogin() {
   errorMsg.value = '';
   if (!isAgreed.value) {
     errorMsg.value = '请阅读并勾选同意《用户协议》和《隐私政策》';
@@ -213,50 +194,28 @@ function handleLogin() {
   }
 
   isLoading.value = true;
-  loadingText.value = '正在建立 API SSL 连接...';
+  loadingText.value = '正在登录...';
 
-  setTimeout(() => {
-    loadingText.value = '查询 MySQL 用户角色中...';
-    setTimeout(() => {
-      isLoading.value = false;
-      const normUser = username.value.trim().toLowerCase();
+  try {
+    const res = await loginApi(username.value.trim(), password.value);
+    const profile = res.profile || null;
+    authStore.login(res.role, profile, res.token);
+    uni.setStorageSync('baoleme_token', res.token);
 
-      const accounts = getAccounts();
-      const found = accounts.find(
-        (a: any) => a.username.toLowerCase() === normUser && a.password === password.value
-      );
-
-      if (!found) {
-        errorMsg.value = '账号或密码错误，请重试';
-        return;
-      }
-
-      if (found.role === 'client') {
-        let profile: UserProfile;
-        if (normUser === 'xiaoming') {
-          profile = MOCK_USER_PROFILES[0];
-        } else {
-          profile = {
-            id: 'u_' + Date.now(),
-            name: found.username,
-            phone: '139' + Math.floor(10000000 + Math.random() * 90000000),
-            address: '北京市海淀区中关村互联网大厦C座18层研讨中心',
-            favoriteCategory: '热销推荐',
-            tags: ['快速干饭', '重口味辣党'],
-            historyOrdersCount: 0,
-          };
-        }
-        authStore.login('client', profile);
-        uni.reLaunch({ url: '/pages/client/home' });
-      } else if (found.role === 'merchant') {
-        authStore.login('merchant');
-        uni.reLaunch({ url: '/pages/merchant/analytics' });
-      }
-    }, 800);
-  }, 600);
+    if (res.role === 'client') {
+      uni.reLaunch({ url: '/pages/client/home' });
+    } else {
+      uni.reLaunch({ url: '/pages/merchant/analytics' });
+    }
+  } catch (e: any) {
+    const msg = e?.data?.message || e?.message || '登录失败，请检查网络';
+    errorMsg.value = msg;
+  } finally {
+    isLoading.value = false;
+  }
 }
 
-function handleRegister() {
+async function handleRegister() {
   errorMsg.value = '';
   successMsg.value = '';
   if (!regUsername.value.trim() || !regPassword.value.trim()) {
@@ -267,18 +226,22 @@ function handleRegister() {
     errorMsg.value = '两次密码不一致';
     return;
   }
-  const accounts = getAccounts();
-  if (accounts.find((a: any) => a.username.toLowerCase() === regUsername.value.toLowerCase())) {
-    errorMsg.value = '该用户名已被注册';
-    return;
+  try {
+    await registerApi({
+      username: regUsername.value.trim(),
+      password: regPassword.value,
+      role: registerRole.value,
+    });
+    successMsg.value = '注册成功！请返回登录';
+    setTimeout(() => {
+      isRegisterMode.value = false;
+      username.value = regUsername.value;
+      password.value = regPassword.value;
+    }, 1500);
+  } catch (e: any) {
+    const msg = e?.data?.message || e?.message || '注册失败';
+    errorMsg.value = msg;
   }
-  saveAccount(regUsername.value, regPassword.value, registerRole.value);
-  successMsg.value = '注册成功！请返回登录';
-  setTimeout(() => {
-    isRegisterMode.value = false;
-    username.value = regUsername.value;
-    password.value = regPassword.value;
-  }, 1500);
 }
 </script>
 
@@ -465,6 +428,9 @@ function handleRegister() {
   font-size: 28rpx;
   color: #2D3436;
   box-sizing: border-box;
+  min-height: 72rpx;
+  position: relative;
+  z-index: 2;
 }
 
 .password-wrap {
