@@ -68,7 +68,13 @@
           :class="'role-' + item.data.role"
         >
           <view class="msg-avatar" :class="item.data.role">
-            <text>{{ avatarForRole(item.data.role) }}</text>
+            <image
+              v-if="item.data.role === 'user' && myAvatarUrl"
+              class="msg-avatar-img"
+              :src="myAvatarUrl"
+              mode="aspectFill"
+            />
+            <text v-else>{{ avatarForRole(item.data.role) }}</text>
           </view>
           <view class="msg-bubble">
             <text class="msg-role-label">{{ labelForRole(item.data.role) }}</text>
@@ -122,8 +128,11 @@ import {
   type ChatSystemEventType,
 } from '../../utils/chatTimeline';
 import type { Message } from '../../types';
+import { registerUserAvatar, resolveUserAvatar } from '../../utils/localImage';
 
 const authStore = useAuthStore();
+
+const myAvatarUrl = computed(() => resolveUserAvatar(authStore.userProfile?.avatar));
 const messages = ref<Message[]>([]);
 const systemEvents = ref(loadSystemEvents(''));
 const typedMessage = ref('');
@@ -178,6 +187,8 @@ function formatTime(iso: string): string {
 async function loadSession() {
   try {
     const userId = authStore.userProfile?.id || 'u1';
+    const avatar = myAvatarUrl.value;
+    if (avatar) registerUserAvatar(userId, avatar);
     sessionId.value = `session_${userId}`;
     systemEvents.value = loadSystemEvents(sessionId.value);
     const session = await getChatSession(userId);
@@ -571,6 +582,13 @@ onUnmounted(() => {
   font-size: 32rpx;
   flex-shrink: 0;
   background: #e2e8f0;
+  overflow: hidden;
+
+  .msg-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
 
   &.assistant {
     background: #dbeafe;

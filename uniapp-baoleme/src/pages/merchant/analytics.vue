@@ -138,8 +138,18 @@ async function fetchData() {
 }
 
 function handleLogout() {
-  authStore.logout();
-  uni.reLaunch({ url: '/pages/login/index' });
+  uni.showModal({
+    title: '退出登录',
+    content: '确定要退出商家后台吗？',
+    confirmText: '退出',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        authStore.logout();
+        uni.reLaunch({ url: '/pages/login/index' });
+      }
+    },
+  });
 }
 
 onMounted(() => {

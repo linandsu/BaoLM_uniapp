@@ -1,4 +1,5 @@
 <template>
+  <view class="login-root">
   <scroll-view class="login-page" scroll-y :enable-back-to-top="true">
     <!-- 背景装饰 -->
     <view class="bg-orb bg-orb-1" />
@@ -135,40 +136,44 @@
         </view>
       </view>
     </view>
-
-    <!-- 设置按钮（左上角） -->
-    <view class="settings-btn" :style="settingsBtnStyle" @tap="showSettings = true">
-      <text>⚙️</text>
-    </view>
-
-    <!-- 设置弹窗 -->
-    <view v-if="showSettings" class="settings-overlay">
-      <view class="settings-backdrop" @tap="showSettings = false" />
-      <view class="settings-panel" @tap.stop>
-        <text class="settings-title">后端连接设置</text>
-        <text class="settings-desc">当前连接地址：</text>
-        <input
-          class="settings-input"
-          v-model="backendUrl"
-          placeholder="http://192.168.1.10:8081"
-          :focus="showSettings"
-        />
-        <view class="settings-actions">
-          <view class="settings-btn-cancel" @tap="showSettings = false">
-            <text>取消</text>
-          </view>
-          <view class="settings-btn-save" @tap="saveBackendUrl">
-            <text>保存</text>
-          </view>
-        </view>
-        <text class="settings-hint">提示：修改后需要重新登录生效</text>
-      </view>
-    </view>
   </scroll-view>
+
+  <!-- 设置按钮与弹窗须在 scroll-view 外，否则 App 端输入框无法聚焦 -->
+  <view class="settings-btn tap-target" :style="settingsBtnStyle" @tap.stop="openSettings">
+    <text>⚙️</text>
+  </view>
+
+  <view v-if="showSettings" class="settings-overlay" @touchmove.stop.prevent>
+    <view class="settings-backdrop" @tap="closeSettings" />
+    <view class="settings-panel" @tap.stop>
+      <text class="settings-title">后端连接设置</text>
+      <text class="settings-desc">当前连接地址：</text>
+      <input
+        class="settings-input"
+        v-model="backendUrl"
+        type="text"
+        placeholder="http://192.168.1.10:8081"
+        :focus="settingsFocus"
+        :adjust-position="true"
+        :hold-keyboard="true"
+        confirm-type="done"
+      />
+      <view class="settings-actions">
+        <view class="settings-btn-cancel tap-target" @tap="closeSettings">
+          <text>取消</text>
+        </view>
+        <view class="settings-btn-save tap-target" @tap="saveBackendUrl">
+          <text>保存</text>
+        </view>
+      </view>
+      <text class="settings-hint">提示：修改后需要重新登录生效</text>
+    </view>
+  </view>
+  </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import TapButton from '../../components/TapButton.vue';
 import { useDeviceStore } from '../../stores/device';
 
@@ -179,18 +184,36 @@ const settingsBtnStyle = computed(() => ({
 import { useAuthStore } from '../../stores/auth';
 import { loginApi, registerApi } from '../../api/auth';
 import { getBaseUrl, setBaseUrl } from '../../api/config';
+import { registerUserAvatar, resolveUserAvatar } from '../../utils/localImage';
 
 onMounted(() => deviceStore.init());
 
 const showSettings = ref(false);
+const settingsFocus = ref(false);
 const backendUrl = ref(getBaseUrl());
+
+function openSettings() {
+  backendUrl.value = getBaseUrl();
+  showSettings.value = true;
+  settingsFocus.value = false;
+  nextTick(() => {
+    setTimeout(() => {
+      settingsFocus.value = true;
+    }, 350);
+  });
+}
+
+function closeSettings() {
+  showSettings.value = false;
+  settingsFocus.value = false;
+}
 
 function saveBackendUrl() {
   const url = backendUrl.value.trim();
   if (url) {
     setBaseUrl(url);
     uni.showToast({ title: '已保存', icon: 'success' });
-    showSettings.value = false;
+    closeSettings();
   }
 }
 
@@ -244,7 +267,12 @@ async function handleLogin() {
 
   try {
     const res = await loginApi(username.value.trim(), password.value);
-    const profile = res.profile || null;
+    let profile = res.profile || null;
+    if (profile && res.userId) {
+      profile = { ...profile, id: profile.id || res.userId };
+      const avatar = resolveUserAvatar(profile.avatar);
+      if (avatar) registerUserAvatar(res.userId, avatar);
+    }
     authStore.login(res.role, profile, res.token);
     uni.setStorageSync('baoleme_token', res.token);
 
@@ -292,6 +320,12 @@ async function handleRegister() {
 </script>
 
 <style lang="scss" scoped>
+.login-root {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .login-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -730,7 +764,7 @@ async function handleRegister() {
   align-items: center;
   justify-content: center;
   font-size: 5vw;
-  z-index: 10;
+  z-index: 100;
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
 }
 
@@ -784,6 +818,8 @@ async function handleRegister() {
 
 .settings-input {
   width: 100%;
+  height: 88rpx;
+  line-height: 48rpx;
   background: #FCFAF9;
   border: 2rpx solid rgba(226, 218, 211, 0.75);
   border-radius: 20rpx;

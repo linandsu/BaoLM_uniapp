@@ -28,7 +28,13 @@
         @tap="selectSession(session.id)"
       >
         <view class="session-avatar" :class="session.mode">
-          <text>{{ session.userEmail?.charAt(0)?.toUpperCase() || 'U' }}</text>
+          <image
+            v-if="customerAvatarUrl(session.userId)"
+            class="session-avatar-img"
+            :src="customerAvatarUrl(session.userId)!"
+            mode="aspectFill"
+          />
+          <text v-else>{{ session.userEmail?.charAt(0)?.toUpperCase() || 'U' }}</text>
         </view>
         <view class="session-body">
           <view class="session-top">
@@ -56,6 +62,17 @@
     <view v-else class="chat-detail">
       <view class="chat-toolbar">
         <view class="toolbar-user">
+          <view v-if="currentSession?.userId" class="toolbar-avatar-wrap">
+            <image
+              v-if="customerAvatarUrl(currentSession?.userId)"
+              class="toolbar-avatar"
+              :src="customerAvatarUrl(currentSession?.userId)!"
+              mode="aspectFill"
+            />
+            <view v-else class="toolbar-avatar fallback">
+              <text>{{ currentSession?.userEmail?.charAt(0)?.toUpperCase() || 'U' }}</text>
+            </view>
+          </view>
           <text class="chat-user-name">{{ currentSession?.userEmail }}</text>
           <text class="mode-tag toolbar" :class="currentSession?.mode">
             {{ currentSession?.mode === 'human' ? '人工服务' : 'AI 自动回复' }}
@@ -101,8 +118,14 @@
             class="message-row"
             :class="item.data.role"
           >
-            <view class="msg-avatar">
-              <text>{{ roleIcon(item.data.role) }}</text>
+            <view class="msg-avatar" :class="item.data.role">
+              <image
+                v-if="item.data.role === 'user' && customerAvatarUrl(currentSession?.userId)"
+                class="msg-avatar-img"
+                :src="customerAvatarUrl(currentSession?.userId)!"
+                mode="aspectFill"
+              />
+              <text v-else>{{ roleIcon(item.data.role) }}</text>
             </view>
             <view class="msg-bubble">
               <text class="msg-role-label">{{ roleLabel(item.data.role) }}</text>
@@ -152,8 +175,14 @@ import {
   buildChatTimeline,
   type ChatSystemEventType,
 } from '../../utils/chatTimeline';
+import { getUserAvatarById } from '../../utils/localImage';
 
 const safeTopStyle = useSafeTop(12);
+
+function customerAvatarUrl(userId?: string): string | null {
+  if (!userId) return null;
+  return getUserAvatarById(userId);
+}
 const sessions = ref<any[]>([]);
 const selectedSessionId = ref<string | null>(null);
 const chatMessages = ref<Message[]>([]);
@@ -437,6 +466,7 @@ onUnmounted(() => {
   font-weight: 800;
   color: white;
   flex-shrink: 0;
+  overflow: hidden;
 
   &.bot {
     background: linear-gradient(135deg, #60a5fa, #3b82f6);
@@ -445,6 +475,12 @@ onUnmounted(() => {
   &.human {
     background: linear-gradient(135deg, #34d399, #059669);
   }
+}
+
+.session-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 
 .session-body {
@@ -548,6 +584,35 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.toolbar-user {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.toolbar-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: block;
+
+  &.fallback {
+    background: linear-gradient(135deg, #34d399, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 28rpx;
+    font-weight: 800;
+  }
+}
+
 .chat-user-name {
   font-size: 30rpx;
   font-weight: 900;
@@ -616,6 +681,13 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 28rpx;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.msg-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
 }
 
 .message-row.assistant .msg-avatar {

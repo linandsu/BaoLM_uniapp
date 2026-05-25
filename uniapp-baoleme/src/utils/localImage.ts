@@ -2,6 +2,7 @@
 
 const DISH_IMAGE_MAP_KEY = 'baoleme_dish_local_images';
 const AVATAR_KEY = 'baoleme_user_avatar_local';
+const USER_AVATAR_MAP_KEY = 'baoleme_user_avatar_map';
 
 /** 内置占位图（SVG data URI，无需网络） */
 export const DISH_PLACEHOLDER =
@@ -94,5 +95,34 @@ export function resolveUserAvatar(remote?: string): string {
   const local = getUserAvatarLocal();
   if (local) return local;
   if (remote && isLocalImage(remote)) return remote;
+  if (remote && isRemoteImage(remote)) return remote;
   return DISH_PLACEHOLDER;
+}
+
+function readUserAvatarMap(): Record<string, string> {
+  try {
+    const raw = uni.getStorageSync(USER_AVATAR_MAP_KEY);
+    if (!raw) return {};
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  } catch {
+    return {};
+  }
+}
+
+/** 按用户 ID 登记头像（客服页、会话列表展示顾客真实头像） */
+export function registerUserAvatar(userId: string, avatarPath: string) {
+  if (!userId || !avatarPath) return;
+  const map = readUserAvatarMap();
+  map[userId] = avatarPath;
+  uni.setStorageSync(USER_AVATAR_MAP_KEY, JSON.stringify(map));
+}
+
+export function getUserAvatarById(userId: string): string | null {
+  return readUserAvatarMap()[userId] || null;
+}
+
+export function resolveUserAvatarById(userId: string, fallbackRemote?: string): string {
+  const byId = getUserAvatarById(userId);
+  if (byId) return byId;
+  return resolveUserAvatar(fallbackRemote);
 }
