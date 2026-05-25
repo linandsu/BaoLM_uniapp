@@ -10,22 +10,18 @@
     "build:apk": "uni build -p android"
   },
   "dependencies": {
-    "@dcloudio/uni-app": "^3.0.0",
-    "@dcloudio/uni-h5": "^3.0.0",
-    "@dcloudio/uni-mp-weixin": "^3.0.0",
+    "@dcloudio/uni-app": "3.0.0-alpha-1000920260525733",
+    "@dcloudio/uni-app-plus": "3.0.0-alpha-1000920260525813",
+    "@dcloudio/uni-h5": "3.0.0-alpha-1000920260525813",
     "pinia": "^2.1.7",
     "vue": "^3.4.0"
   },
   "devDependencies": {
-    "@dcloudio/types": "^3.0.0",
-    "@dcloudio/uni-cli-shared": "^3.0.0",
-    "@vitejs/plugin-vue": "^4.0.0",
+    "@dcloudio/types": "3.4.31",
+    "@dcloudio/uni-cli-shared": "3.0.0-alpha-1000920260525813",
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-1000920260525813",
+    "sass-embedded": "^1.100.0",
     "typescript": "~5.3.0",
-    "vite": "^5.0.0"
-  },
-  "browserslist": [
-    "last 2 Chrome versions",
-    "last 2 Firefox versions",
-    "last 2 Safari versions"
-  ]
+    "vite": "8.0.13"
+  }
 }
